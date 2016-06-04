@@ -1,44 +1,26 @@
-﻿__author__ = 'Paweł Kowalski'
+﻿###############################################################################
+# Name: 
+#   primitives_ui.py
 #
-# This script was created to demonstrate the use of Python in Autodesk 3D Studio Max
+# Description: 
+#   PySide example that creates a simple GUI for generating 
+#   polygon primitives in Maya 2014
 #
-# Copyright (C) Paweł Kowalski
-# www.pkowalski.com
-# www.behance.net/pkowalski
+#   Source code for "A More Practical PySide Example" (http://zurbrigg.com)
 #
-# Open the script from 3D Studio Max Listener with command:
-# python.ExecuteFile "path`to`file\main.py"
+# Author: 
+#   Chris Zurbrigg
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-#
-#
-#
+###############################################################################
 
-import time  # To measure execution times
-import random
-import math
-import os.path
-import ctypes
-
+from PySide import QtCore
+from PySide import QtGui
 from PySide.QtCore import SIGNAL
-from PySide import QtGui, QtCore  # PySide is recommended in documentation of 3Ds Max Python API
+
 from shiboken import wrapInstance
 
-import maya.cmds as cmds  # This module contains all the classes and functions of the Maya Python API
-from maya import mel  # This module contains mel API
-from maya import OpenMayaUI as omui
+import maya.cmds as cmds
+import maya.OpenMayaUI as omui
 
 class DataTable:
     """
@@ -118,31 +100,25 @@ class DataTable:
         MaxPlus.ViewportManager.EnableSceneRedraw()  # script or the viewports will not update.
         pass
 
-class GUI(QtGui.QWidget):
-    """
-    GUI object. Standard way of using PySide.
-    PySide is recommended in documentation of 3Ds Max Python API
-    """
+class GUI(QtGui.QDialog):
 
     path = "C:/"
 
     def __init__(self):
-        """
-        Setting the content of the GUI
-        """
-        omui.MQtUtil.mainWindow()
-        ptr = omui.MQtUtil.mainWindow()
-        widget = wrapInstance(long(ptr), QtGui.QWidget)
-        mayaMainWindowPtr = omui.MQtUtil.mainWindow()
-        mayaMainWindow = wrapInstance(long(mayaMainWindowPtr), QtGui.QWidget)
 
-        super(GUI, self).__init__()
-        self.setParent(mayaMainWindow)
+        #set maya main window as parent or it will disappear quickly:
+        main_window_ptr = omui.MQtUtil.mainWindow()
+        mayaMainWindow = wrapInstance(long(main_window_ptr), QtGui.QWidget)
+
+        super(GUI, self).__init__(mayaMainWindow) # Initialize with mayaMainWindow as a parent
 
         self.resize(250, 150)  # Set the size of window
         self.center()
-
         self.setWindowTitle('Skrypt - 3Ds Max')  # Set the title of window
+        self.setWindowFlags(QtCore.Qt.Tool) #  The tool window will always be kept on top of parent (maya_main_window)
+        
+        # Delete UI on close to avoid winEvent error
+        #self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
         grid = QtGui.QGridLayout()  # Create a grid layout
         grid_internal = QtGui.QGridLayout()
@@ -173,7 +149,6 @@ class GUI(QtGui.QWidget):
         self.connect(btn_save, SIGNAL("clicked()"), self.data_table.save)
 
         self.setLayout(grid)  # Set the layout of the window
-        self.show()
 
     def center(self):
         """
@@ -184,6 +159,7 @@ class GUI(QtGui.QWidget):
         cp = QtGui.QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
+
 
     def fn_step(self):
         """
@@ -225,19 +201,17 @@ class GUI(QtGui.QWidget):
         self.data_table.run(text="Tworzenie i animowanie drzew", function=create_and_animate_trees)
         self.data_table.run(text="Zmiana hierarhii obiektow, koncowa animacja", function=change_hierarchy_and_animate)
         self.data_table.run(text="Tworzenie i przypisywanie materialow", function=create_and_assign_materials)
-
-        MaxPlus.ViewportManager.ForceCompleteRedraw()
-        MaxPlus.ViewportManager.EnableSceneRedraw()
+        
+if __name__ == "__main__":
+    
+    # Development workaround for winEvent error when running
+    # the script multiple times
+    try:
+        ui.close()
+    except:
         pass
-
-
-def main():
-
-    app = QtGui.QApplication.instance()  # As suggested in 3Ds Max Python API documentation
-    if not app:
-        app = QtGui.QApplication([])
-    gui = GUI()
-
-
-if __name__ == '__main__':
-    main()
+    
+    ui = GUI()
+    ui.show()
+    
+    
