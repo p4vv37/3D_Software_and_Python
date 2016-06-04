@@ -33,7 +33,7 @@ from PySide.QtCore import SIGNAL
 from shiboken import wrapInstance
 
 import maya.cmds as cmds
-import maya.OpenMayaUI as omui
+import maya.api.OpenMayaUI as omui
 
 class DataTable:
     """
