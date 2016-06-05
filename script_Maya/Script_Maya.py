@@ -48,29 +48,11 @@ def set_scale_keys(target, keyframes, multiply_by_ticks=True):
     :param keyframes: Python list - Keyframes that will be created: [[int time, float scale (1 = 100%),] ...]
     :param multiply_by_ticks: Boolean - Set to False if time in list of keyframes is already multiplied by TICKS.
     """
-    return 0
-    current_scale = 1.0  # Need to remember the history of scaling to convert absolute values of keyframes to relative
-    is_first_frame = True
-    MaxPlus.Animation.SetAnimateButtonState(True)   # Enable AutoKey
-    MaxPlus.Animation.SetDefaultTangentType(3, 3)   # Set tangent to fast - just for the first frame
     for keyframe in keyframes:  # For every keyframe from the list of keyframes scale object at proper time
         scale_value = float(keyframe[0])
-        scale = MaxPlus.Point3(scale_value / current_scale, scale_value / current_scale, scale_value / current_scale)
-
-        if multiply_by_ticks:  # If the time value in keyframes was not converted to ticks, it will be now
-            target.Scale(scale, int(keyframe[1] * TICKS))
-        else:
-            target.Scale(scale, int(keyframe[1]))
-        current_scale = scale_value
-
-        if is_first_frame:  # 3Ds Max creates a keyframe in 0 with current value by default.
-            is_first_frame = False  # It need to be overrided, if the frame of key that is being created is not 0.
-            MaxPlus.Animation.SetDefaultTangentType(5, 5)
-            if int(keyframe[1]) != 0:
-                target.Scale(scale, 0)
-
-    MaxPlus.Animation.SetAnimateButtonState(False)
-
+        cmds.setKeyframe( target, attribute='scaleX', v=scale_value, time=keyframe[1], itt="fast", ott="fast")
+        cmds.setKeyframe( target, attribute='scaleY', v=scale_value, time=keyframe[1], itt="fast", ott="fast")
+        cmds.setKeyframe( target, attribute='scaleZ', v=scale_value, time=keyframe[1], itt="fast", ott="fast")
 
 def leafs_rotations(number_of_leafs):
     """
@@ -81,7 +63,7 @@ def leafs_rotations(number_of_leafs):
     :param num: int - Number of leafs
     :return: Python list - List of angles of leafs around the palm tree
     """
-    return 0
+
     x = -math.pi  # Leafs are placed around the trunk, so the range is 2*pi (360 deg). x = 0, y = 2*pi would also be ok.
     y = math.pi
     angles = []
@@ -105,21 +87,10 @@ def set_position_keys(target, keyframes):
     :param obj:  MaxPlus.INode - Object which scale will be animated
     :param keyframes: Python list - Keyframes that will be created: [[int time, [float x, float y, float z]], ...]
     """
-    return 0
-    is_first_frame = True
-    MaxPlus.Animation.SetAnimateButtonState(True)
-
-    for keyframe in keyframes:
-        MaxPlus.Animation.SetTime(keyframe[1] * TICKS)
-        MaxPlus.Animation.SetDefaultTangentType(keyframe[2][0], keyframe[2][1])
-        target.Position = MaxPlus.Point3(keyframe[0][0], keyframe[0][1], keyframe[0][2])
-
-        if is_first_frame:  # 3Ds Max creates a keyframe in 0 with current value by default.
-            is_first_frame = False  # It need to be overrided, if the frame of key that is being created is not 0.
-            if int(keyframe[1]) != 0:
-                target.Position = MaxPlus.Point3(keyframe[0][0], keyframe[0][1], keyframe[0][2])
-
-    MaxPlus.Animation.SetAnimateButtonState(False)
+    for keyframe in keyframes:  # For every keyframe from the list of keyframes scale object at proper time
+        cmds.setKeyframe( target, attribute='translateX', v=keyframe[0][0], time=keyframe[1], itt="fast", ott="fast")
+        cmds.setKeyframe( target, attribute='translateY', v=keyframe[0][1], time=keyframe[1], itt="fast", ott="fast")
+        cmds.setKeyframe( target, attribute='translateZ', v=keyframe[0][2], time=keyframe[1], itt="fast", ott="fast")
 
 
 def make_shark_mesh(mesh):
@@ -756,14 +727,12 @@ def import_and_animate_basic_meshes(path):
 
     :param path: string - The directory with necessary files
     """
-    return 0
-    MaxPlus.FileManager.Import(path + '\water.obj', True)  # Import an obj file
-    water = MaxPlus.INode.GetINodeByName("water")  # Select the imported object by name
-    set_scale_keys(target=water, keyframes=[[0.001, 1], [1, 9]])  # Set the animation keys
 
-    MaxPlus.FileManager.Import(path + '\land.obj', True)
-    land = MaxPlus.INode.GetINodeByName("land")
-    set_scale_keys(target=land, keyframes=[[0.001, 8], [1, 11]])
+    cmds.file(path + '\water.obj', i=True) # Import an obj file
+    set_scale_keys(target="water", keyframes=[[0.001, 1], [1, 9]])  # Set the animation keys
+
+    cmds.file(path + '\land.obj', i=True)
+    set_scale_keys(target="land", keyframes=[[0.001, 8], [1, 11]])
 
 
 def create_shark_and_cloud():
