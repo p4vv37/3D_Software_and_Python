@@ -1,8 +1,8 @@
-﻿__author__ = 'Paweł Kowalski'
+﻿__author__ = 'Pawe? Kowalski'
 #
 # This script was created to demonstrate the use of Python in Autodesk 3D Studio Max
 #
-# Copyright (C) Paweł Kowalski
+# Copyright (C) Pawe? Kowalski
 # www.pkowalski.com
 # www.behance.net/pkowalski
 #
@@ -160,45 +160,45 @@ def make_shark_mesh(mesh):
     mesh.SetVert(11, MaxPlus.Point3(0.422536, -0.875526, -0.277747))
 
     mesh.GetFace(0).SetVerts(8, 10, 11)  # Vertices of face.
-    mesh.GetFace(0).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(0).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(1).SetVerts(4, 7, 6)
-    mesh.GetFace(1).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(1).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(2).SetVerts(0, 5, 4)
-    mesh.GetFace(2).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(2).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(3).SetVerts(1, 7, 5)
-    mesh.GetFace(3).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(3).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(4).SetVerts(3, 6, 7)
-    mesh.GetFace(4).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(4).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(5).SetVerts(2, 4, 6)
-    mesh.GetFace(5).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(5).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(6).SetVerts(0, 9, 8)
-    mesh.GetFace(6).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(6).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(7).SetVerts(2, 10, 9)
-    mesh.GetFace(7).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(7).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(8).SetVerts(3, 11, 10)
-    mesh.GetFace(8).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(8).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(9).SetVerts(1, 8, 11)
-    mesh.GetFace(9).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(9).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(10).SetVerts(8, 9, 10)
-    mesh.GetFace(10).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(10).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(11).SetVerts(4, 5, 7)
-    mesh.GetFace(11).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(11).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(12).SetVerts(0, 1, 5)
-    mesh.GetFace(12).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(12).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(13).SetVerts(1, 3, 7)
-    mesh.GetFace(13).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(13).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(14).SetVerts(3, 2, 6)
-    mesh.GetFace(14).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(14).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(15).SetVerts(2, 0, 4)
-    mesh.GetFace(15).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(15).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(16).SetVerts(0, 2, 9)
-    mesh.GetFace(16).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(16).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(17).SetVerts(2, 3, 10)
-    mesh.GetFace(17).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(17).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(18).SetVerts(3, 1, 11)
-    mesh.GetFace(18).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(18).SetEdgeVisFlags(1, 1, 0)
     mesh.GetFace(19).SetVerts(1, 0, 8)
-    mesh.GetFace(19).SetEdgeVisFlags(1, 1, 1)
+    mesh.GetFace(19).SetEdgeVisFlags(1, 1, 0)
 
     mesh.InvalidateGeomCache()  # Object gets displayed in the viewport
     mesh.InvalidateTopologyCache()
@@ -553,7 +553,7 @@ def make_cloud_mesh(mesh):
 
     for face in faces_list:  # For every face from list save its data to mesh
         mesh.GetFace(face[0]).SetVerts(face[1][0], face[1][1], face[1][2])
-        mesh.GetFace(face[0]).SetEdgeVisFlags(1, 1, 1)
+        mesh.GetFace(face[0]).SetEdgeVisFlags(1, 1, 0)
 
     mesh.InvalidateGeomCache()
     mesh.InvalidateTopologyCache()
@@ -675,7 +675,7 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
 
     for face in faces_list:
         mesh.GetFace(face[0]).SetVerts(face[1][0], face[1][1], face[1][2])
-        mesh.GetFace(face[0]).SetEdgeVisFlags(1, 1, 1)
+        mesh.GetFace(face[0]).SetEdgeVisFlags(1, 1, 0)
     mesh.InvalidateGeomCache()
     mesh.InvalidateTopologyCache()
 
@@ -1247,8 +1247,7 @@ class DataTable:
     target_list = None
     target_label = None
     scores_list = []
-    current_step = 0  # current step (when running the script step-by-step)
-    max_step = 0  # the step that should be performed next (when running the script step-by-step)
+    next_step = 0  # the step that should be performed next (when running the script step-by-step)
     ignore_steps = False  # if ignore_steps is false the animation is step by step
 
     def __init__(self):
@@ -1265,27 +1264,22 @@ class DataTable:
                               required by some functions.
         """
 
-        if self.ignore_steps or self.current_step == self.max_step:  # Skip steps or check if this is the right moment
 
-            self.target_label.setText(text)  # Update the label of UI
-            if path is None:  # If no path was passed as argument, then do not pass this variable to target function
-                ts = time.time()  # Start measuring time
-                function()  # Execute the function passed as an argument
-            else:
-                ts = time.time()
-                function(path)  # if path was passed then pass it to the target function
-            te = time.time()  # Record the ending time of command
-            score = [text, te - ts]  # Measure the interval
-            self.scores_list.append(score)  # append the
-            self.max_step += 1  # Update the next step number (important when running step-by-step)
-            self.current_step += 2  # Make sure that the next time function is called current_step !-= max_step
+        self.target_label.setText(text)  # Update the label of UI
+        if path is None:  # If no path was passed as argument, then do not pass this variable to target function
+            ts = time.time()  # Start measuring time
+            function()  # Execute the function passed as an argument
+        else:
+            ts = time.time()
+            function(path)  # if path was passed then pass it to the target function
+        te = time.time()  # Record the ending time of command
+        score = [text, te - ts]  # Measure the interval
+        self.scores_list.append(score)  # append the
 
-            try:
-                self.target_list.addItem(QtGui.QListWidgetItem(str(score)))  # Add measured time to scores list in UI
-            except:
-                pass
-        else:  # If function is running step-by-step and it is not the time for ths action just increment the counter.
-            self.current_step += 1
+        try:
+            self.target_list.addItem(QtGui.QListWidgetItem(str(score)))  # Add measured time to scores list in UI
+        except:
+            pass
 
     def save(self):
         """
@@ -1408,16 +1402,25 @@ class GUI(QtGui.QWidget):
                                                                'D:/Dane/Projekty/licencjat/')
             print self.path
 
-        self.data_table.current_step = 0  # Important when running step-by-step
         self.label_info.setText("Rozpoczeto dzialanie skryptu")
-        self.data_table.run(text="Ustawianie sceny", function=prepare_scene, path=self.path)
-        self.data_table.run(text="Importowanie podstawowych obiektow", function=import_and_animate_basic_meshes,
-                            path=self.path)
-        self.data_table.run(text="Tworzenie pletwy rekina i chmury", function=create_shark_and_cloud)
-        self.data_table.run(text="Tworzenie skrzynki za pomoca Macro", function=create_chest)
-        self.data_table.run(text="Tworzenie i animowanie drzew", function=create_and_animate_trees)
-        self.data_table.run(text="Zmiana hierarhii obiektow, koncowa animacja", function=change_hierarchy_and_animate)
-        self.data_table.run(text="Tworzenie i przypisywanie materialow", function=create_and_assign_materials)
+
+        functions_with_names = [["Ustawianie sceny", prepare_scene, self.path],
+                                ["Importowanie podstawowych obiektow", import_and_animate_basic_meshes, self.path],
+                                ["Tworzenie pletwy rekina i chmury", create_shark_and_cloud, None],
+                                ["Tworzenie skrzynki za pomoca Macro", create_chest, None],
+                                ["Tworzenie i animowanie drzew", create_and_animate_trees, None],
+                                ["Zmiana hierarhii obiektow, koncowa animacja", change_hierarchy_and_animate, None],
+                                ["Tworzenie i przypisywanie materialow", create_and_assign_materials, None]]
+
+        if self.data_table.ignore_steps:
+            for action_num in xrange(self.data_table.next_step, len(functions_with_names)):
+                line = functions_with_names[action_num]
+                self.data_table.run(text=line[0], function=line[1], path=line[2])
+        else:
+            action_num = self.data_table.next_step
+            self.data_table.next_step += 1
+            line = functions_with_names[action_num]
+            self.data_table.run(text=line[0], function=line[1], path=line[2])
 
         MaxPlus.ViewportManager.ForceCompleteRedraw()
         MaxPlus.ViewportManager.EnableSceneRedraw()
