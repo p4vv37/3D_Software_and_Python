@@ -613,14 +613,12 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
                                                        [1.2, anim_start_frame + keyframe_interval],
                                                        [1, anim_start_frame + 2 * keyframe_interval]],
                        multiply_by_ticks=False)
-
-        try:  # If the segment is not the first segment of the tree then it should be parented to the previous one.
-            segment_node.Parent = old_segment_node  # if there is not old_segment_node the command will fail
+            try:  # If the segment is not the first segment of the tree then it should be parented to the previous one.
+            segment_node.Parent = root  # if there is not old_segment_node the command will fail
         except:  # If the function failed then this is a first node of the tree and will not have any parent
             land = MaxPlus.INode.GetINodeByName("land")
             segment_node.Parent = land
             root = segment_node
-        old_segment_node = segment_node  # this segment will be the parent of the next one
 
     # The leaf will be created from saved vertex data in a simmilar way to cloud.
     geom = MaxPlus.Factory.CreateGeomObject(MaxPlus.ClassIds.TriMeshGeometry)
