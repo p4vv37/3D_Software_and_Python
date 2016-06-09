@@ -70,27 +70,6 @@ def set_scale_keys(target, keyframes):
         cmds.setKeyframe(target, attribute='scaleZ', v=scale_value, time=keyframe[1], itt="fast", ott="fast")
 
 
-def set_scale_keys2D(target, keyframes):
-    """
-    Function animates the scale of given object by creating the given keyframes.
-    Animation is done with a use of AutoKey function of 3Ds Max.
-    The AutoKey function can be set with:
-    MaxPlus.Animation.SetAnimateButtonState(Bool)
-
-    :param obj:  MaxPlus.INode - Object which scale will be animated
-    :param keyframes: Python list - Keyframes that will be created: [[int time, float scale (1 = 100%),] ...]
-    :param multiply_by_ticks: Boolean - Set to False if time in list of keyframes is already multiplied by TICKS.
-    """
-
-    for keyframe in keyframes:  # For every keyframe from the list of keyframes scale object at proper time
-        scale_value = float(keyframe[0])
-        # cmds.setKeyframe(target, attribute='scaleX', v=scale_value, time=keyframe[1], itt="fast", ott="fast")
-        # print 'cmds.setKeyframe('+target+', attribute=\'scaleX\', v='+str(scale_value)+', time='+str(keyframe[1])+', itt="fast", ott="fast")'
-        # cmds.setKeyframe(target, attribute='scaleY', v=scale_value, time=keyframe[1], itt="fast", ott="fast")
-        # cmds.setKeyframe(target, attribute='scaleZ', v=scale_value, time=keyframe[1], itt="fast", ott="fast")
-        pass
-
-
 def leafs_rotations(number_of_leafs):
     """
     Creates the list of angles of leafs around the palm tree.
@@ -202,6 +181,7 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
 
     segments_tab = []  # A list of all the segments of the tree
     for i in xrange(segs_num):
+        cmds.refresh(f=True)
         # Create segments of pine of the palm tree
 
         current_segment_name = 'Palm_element_' + str(id_num) + '_' + str(i)
@@ -281,36 +261,13 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
         i += 1
 
     cmds.delete("leaf")
-    cmds.nonLinear(root, type='bend', after = True, curvature=bending, lowBound=0)
+    cmds.nonLinear(root, type='bend', after = True, curvature=2*bending, lowBound=0)
 
     for name in cmds.ls():
         if name.endswith('Handle'):
-            print name
-            cmds.scale(50, 50, 50, name, absolute=True)
+            cmds.scale(60,60,60,name)
 
     return root
-
-
-def append_material_by_prefix(prefix, material, node=None):
-    """
-    Recursive function that iterates thought the scene graph and applies material to nodes with chosen prefix
-
-    :param prefix: str - chosen prefix
-    :param m: MaxPlus.Mtl - material to append
-    :param node: MaxPlus.INode - current node
-    """
-    return 0
-    if str(node.Name).startswith(prefix):
-        node.Material = material
-    for c in node.Children:
-        append_material_by_prefix(prefix, material, c)
-
-
-#
-#
-# Main functions of the script:
-#
-#
 
 
 def prepare_scene(path):
@@ -321,21 +278,30 @@ def prepare_scene(path):
     """
 
     cmds.playbackOptions(min=0, max=260)  # Set the animation range
-    cmds.playbackOptions(ps=25)
 
     cmds.autoKeyframe(state=False)  # Make sure, that the AutoKey button is disabled
 
     # Set the render settings
-    if cmds.pluginInfo("Mayatomr", registered=True, query=True):  # check if Mental Ray plugin is avaible
-        if not cmds.pluginInfo("Mayatomr", loaded=True, query=True):  # check if MR plugin is loaded
-            cmds.loadPlugin("Mayatomr.mir")  # If MR plugin is not loaded then load it
-        current_render_engine = cmds.getAttr("defaultRenderGlobals.currentRenderer")  # Get the name of render engine
-        if current_render_engine != "mentalRay":  # if the current render engine is not Mental Ray
-            cmds.setAttr("defaultRenderGlobals.currentRenderer", "mentalRay", type="string")  # Set MR as render engine
-    else:
-        print("Mental Ray plugin is not avaible. It can be found on the Autodesk website: "
-              "https://knowledge.autodesk.com/support/maya/downloads/caas/downloads/content/"
-              "mental-ray-plugin-for-maya-2016.html")
+    # Load Mental ray (will throw an error if exists, use e.g. try-except to get around that)
+    #try:
+    #    cmds.loadPlugin('Mayatomr', quiet=True)
+
+        # Autoload Mental ray
+    #    cmds.pluginInfo('Mayatomr', edit=True, autoload=True)
+
+        # change render drop down
+    #    cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string')
+    #except:
+    #    pass
+    # example on render settings change
+    #Change samples
+    #cmds.setAttr('miDefaultOptions.maxSamples', 2);
+
+    # Set filter to Mitchell
+    #cmds.setAttr('miDefaultOptions.filter', 3);
+
+    #Enable final gather
+    #cmds.setAttr('miDefaultOptions.finalGather', 1)
 
     cam = cmds.camera(name="RenderCamera", focusDistance=35, position=[-224.354, 79.508, 3.569], rotation=[-19.999,-90,0])  # create camera to set its background
     # Set Image Plane for camera background
@@ -837,12 +803,12 @@ doDelete;
     '''
 
     mel.eval(recorded_macro)
-    set_scale_keys(target='CHEST', keyframes=[[0.001, 44], [0.1, 48]])
-    set_position_keys(target='CHEST', keyframes=[[[-3.892, 0.349, -1.533], 57, [1, 1]],
-                                               [[-3.892, 0.349, 0], 61, [1, 1]],
-                                               [[-3.892, 0.349, -1.533], 63, [1, 1]]])
-    cmds.rotate(, 'CHEST')chest.Rotate(MaxPlus.Quat().SetEuler(-22, 121, -0.0296556, -5))
-    cmds.move(-3.941, -1.533, 0.061, absolute="True")
+    set_scale_keys(target='CHEST', keyframes=[[0.001, 57], [0.1, 63]])
+    set_position_keys(target='CHEST', keyframes=[[[-3.892, 0.764, 0.349], 57, [1, 1]],
+                                               [[-3.892, 2.297, 0.349], 61, [1, 1]],
+                                               [[-3.892, 0.764, 0.349], 63, [1, 1]]])
+    cmds.rotate('CHEST')
+    cmds.move(-3.941, -1.533, 0.061, absolute=True)
     cmds.parent('CHEST', 'land')
 
 
@@ -853,26 +819,37 @@ def create_and_animate_trees():
     """
 
     palm = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
+    cmds.currentTime(55)
+    cmds.refresh(f=True)
+    cmds.delete(palm, ch=True)
 
-    #cmds.select(clear=True)
-    #cmds.select(palm)
-    #cmds.delete(palm, ch=True)
-
-    #cmds.rotate(-0.051025, 1.69211, 0.366333, palm, absolute=True)  # Rotate the palm
-    #print("root:", palm)
-    cmds.move(-8.5, -2.5, 18.1, palm, absolute=True)  # Position the palm
+    cmds.rotate(-0.051025, 1.69211, 0.366333, palm, absolute=True)  # Rotate the palm
+    cmds.move(-8.5, -4.538, 18.1, palm, absolute=True)  # Position the palm
     cmds.parent(palm, 'land', relative=True)
-    #palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=40, id_num=2, anim_start=40, anim_end=45)
-    #palm.Rotate(MaxPlus.Quat().SetEuler(0.0226778, 0.247746, 1.71606))
-    #palm.Position = MaxPlus.Point3(28, -6.3, -2.5)
 
-    #palm = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
-    #palm.Rotate(MaxPlus.Quat().SetEuler(0.0226778, 0.247746, -1.94985))
-    #palm.Position = MaxPlus.Point3(34, -34, -2.5)
+    palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=40, id_num=2, anim_start=40, anim_end=45)
+    cmds.refresh(f=True)
+    cmds.delete(palm, ch=True)
+    cmds.rotate(0.0226778, 0.247746, 1.71606, palm)
+    cmds.move(28, -6.3, -2.5, palm)
+    cmds.parent(palm, 'land', relative=True)
 
-    #palm = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
-    #palm.Rotate(MaxPlus.Quat().SetEuler(0.0226778, 0.244222, -1.03672))
-    #palm.Position = MaxPlus.Point3(14, -19, -2.5)
+
+    palm = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
+    cmds.refresh(f=True)
+    cmds.delete(palm, ch=True)
+    cmds.rotate(0.0226778, 0.247746, -1.94985, palm)
+    cmds.move(34, -2.5, -34, palm)
+    cmds.parent(palm, 'land', relative=True)
+
+
+    palm = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
+    cmds.refresh(f=True)
+    cmds.delete(palm, ch=True)
+    cmds.rotate(0.0226778, 0.244222, -1.03672, palm)
+    cmds.move(14, -2.5, -19, palm)
+    cmds.parent(palm, 'land', relative=True)
+
 
 
 
@@ -892,23 +869,24 @@ def change_hierarchy_and_animate():
 
     cmds.setKeyframe(top_locator, attribute='rotateY', v=20, time=260, itt="plateau", ott="plateau")
     cmds.setKeyframe(top_locator, attribute='rotateY', v=0, time=0, itt="linear", ott="linear")
-    return 0
 
-    light_id = MaxPlus.Class_ID(0x7bf61478, 0x522e4705)
-    skylight = MaxPlus.Factory.CreateLight(light_id)
-    skylight.ParameterBlock.multiplier.Value = 0.08
-    skylight.ParameterBlock.rgb.Value = MaxPlus.Color(247 / 255.0, 249 / 255.0, 1)
-    MaxPlus.Factory.CreateNode(skylight)
+    dome_light = cmds.polySphere(r=500);
+    cmds.polyNormal(dome_light, normalMode=0)
 
-    light_id = MaxPlus.Class_ID(1540123970, 206521102)
-    light = MaxPlus.Factory.CreateLight(light_id)
-    light.ParameterBlock.intensity.Value = 80000
-    light.ParameterBlock.light_radius.Value = 25
-    light.ParameterBlock.castShadows.Value = True
-    light.SetShadowType(1)
-    light_node = MaxPlus.Factory.CreateNode(light)
-    light_node.Rotate(MaxPlus.Quat().SetEuler(0.785398, 0, -0.959931))
-    light_node.Position = MaxPlus.Point3(-186.942, -134.755, 189.936)
+    cmds.setAttr(dome_light[0]+".miDeriveFromMaya", 0)
+    cmds.setAttr(dome_light[0]+".miVisible", 0)
+    cmds.setAttr(dome_light[0]+".miShadow", 0)
+    cmds.rename(dome_light[0], "dome_light")
+
+    area_light = cmds.shadingNode('areaLight', asLight=True)
+    cmds.move(0, 0, 0, area_light, absolute=True)
+    cmds.rotate(0, 0, 0, area_light, absolute=True)
+    cmds.scale(25, 25, 25, area_light, absolute=True)
+
+    cmds.setAttr(area_light+".intensity", 8)
+    cmds.setAttr(area_light+".areaLight", 1)
+    cmds.setAttr(area_light+".areaType", 1)
+    cmds.setAttr(area_light+".decayRate", 2)
 
 
 def create_and_assign_materials():
@@ -916,6 +894,71 @@ def create_and_assign_materials():
     Function creates and applies materials to the objects
     It was created to show how to use the Material Manager.
     """
+
+    light_dome_mat = cmds.shadingNode("surfaceShader", asShader=True)
+    cmds.setAttr(light_dome_mat+".outColorR", 1.0)
+    cmds.setAttr(light_dome_mat+".outColorG", 1.0)
+    cmds.setAttr(light_dome_mat+".outColorB", 1.0)
+    light_dome_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
+    cmds.connectAttr('%s.outColor' %light_dome_mat ,'%s.surfaceShader' %light_dome_sg)
+
+    land_mat = cmds.shadingNode("lambert", asShader=True)
+    cmds.setAttr(land_mat+".outColorR", 1.0)
+    cmds.setAttr(land_mat+".outColorG", 0.75)
+    cmds.setAttr(land_mat+".outColorB", 0.45)
+    land_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
+    cmds.connectAttr('%s.outColor' %land_mat ,'%s.surfaceShader' %land_sg)
+    cmds.sets("land", e=True, forceElement=land_sg)
+
+    wood_mat = cmds.shadingNode("lambert", asShader=True)
+    cmds.setAttr(wood_mat+".outColorR", 0.18)
+    cmds.setAttr(wood_mat+".outColorG", 0.13)
+    cmds.setAttr(wood_mat+".outColorB", 0.13)
+    wood_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
+    cmds.connectAttr('%s.outColor' %wood_mat ,'%s.surfaceShader' %wood_sg)
+    #cmds.sets("land", e=True, forceElement=wood_sg)
+
+    leaf_mat = cmds.shadingNode("lambert", asShader=True)
+    cmds.setAttr(leaf_mat+".outColorR", 0.4)
+    cmds.setAttr(leaf_mat+".outColorG", 1.0)
+    cmds.setAttr(leaf_mat+".outColorB", 0.3)
+    leaf_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
+    cmds.connectAttr('%s.outColor' %leaf_mat ,'%s.surfaceShader' %leaf_sg)
+
+    gray_mat = cmds.shadingNode("lambert", asShader=True)
+    cmds.setAttr(gray_mat+".outColorR", 0.5)
+    cmds.setAttr(gray_mat+".outColorG", 0.5)
+    cmds.setAttr(gray_mat+".outColorB", 0.5)
+    gray_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
+    cmds.connectAttr('%s.outColor' %gray_mat ,'%s.surfaceShader' %gray_sg)
+
+    water_mat = cmds.shadingNode("mia_material_x", asShader=True)
+    cmds.setAttr(water_mat+".diffuseR", 0.0)
+    cmds.setAttr(water_mat+".diffuseG", 0.209)
+    cmds.setAttr(water_mat+".diffuseB", 0.202)
+    cmds.setAttr(water_mat+".refl_gloss", 0.84)
+    cmds.setAttr(water_mat+".reflectivity", 0.6)
+    cmds.setAttr(water_mat+".diffuse_roughness", 0.16)
+    cmds.setAttr(water_mat+".refr_ior", 1.3)
+    cmds.setAttr(water_mat+".transparency", 0.43*0.435)
+    cmds.setAttr(water_mat+".refr_gloss", 0.76)
+    water_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
+    cmds.connectAttr('%s.message' %water_mat ,'%s.miPhotonShader' %water_sg)
+    cmds.connectAttr('%s.message' %water_mat ,'%s.miShadowShader' %water_sg)
+    cmds.connectAttr('%s.message' %water_mat ,'%s.miMaterialShader' %water_sg)
+
+    for obj in cmds.ls(geometry=True, ):
+        if "dome_light" in obj:
+            cmds.sets(obj, e=True, forceElement=light_dome_sg)
+        if "LOCK" in obj:
+            cmds.sets(obj, e=True, forceElement=gray_sg)
+        if any(x in obj for x in ['segment', 'CHEST']):
+            cmds.sets(obj, e=True, forceElement=wood_sg)
+        if "leaf" in obj:
+            cmds.sets(obj, e=True, forceElement=leaf_sg)
+        if "water" in obj:
+            cmds.sets(obj, e=True, forceElement=water_sg)
+
     return 0
     # Simple, gray material for cloud and shark:
     mat_id = MaxPlus.Class_ID(1890604853, 1242969684)  # Class_ID of Arch & Design material
