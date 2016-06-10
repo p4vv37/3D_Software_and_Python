@@ -24,7 +24,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 #
+# To run the script execute:
+# execcfile('path:\to\Script_Maya.py')
+# in Script Editor
 #
+#
+#
+
 
 import time  # To measure execution times
 import random
