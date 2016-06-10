@@ -24,7 +24,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 #
+# To run the script execute:
+# python.ExecuteFile "path:\to\Script_3DSMax.py"
+# in MAXScript Listener
 #
+#
+#
+
 
 import time  # To measure execution times
 import random
