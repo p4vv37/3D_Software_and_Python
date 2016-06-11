@@ -48,7 +48,8 @@ import os
 import time
 import math
 import random
-
+import glob
+from pymel.all import mel
 
 
 def frange(start, end, jump):
@@ -287,32 +288,25 @@ def prepare_scene(path):
 
     cmds.autoKeyframe(state=False)  # Make sure, that the AutoKey button is disabled
 
-    # Set the render settings
-    # Load Mental ray (will throw an error if exists, use e.g. try-except to get around that)
-    #try:
-    #    cmds.loadPlugin('Mayatomr', quiet=True)
-
-        # Autoload Mental ray
-    #    cmds.pluginInfo('Mayatomr', edit=True, autoload=True)
-
-        # change render drop down
-    #    cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string')
-    #except:
-    #    pass
-    # example on render settings change
-    #Change samples
-    #cmds.setAttr('miDefaultOptions.maxSamples', 2);
-
-    # Set filter to Mitchell
-    #cmds.setAttr('miDefaultOptions.filter', 3);
-
-    #Enable final gather
-    #cmds.setAttr('miDefaultOptions.finalGather', 1)
+    plugins_dirs = mel.getenv("MAYA_PLUG_IN_PATH")
+    for plugins_dir in plugins_dirs.split(';'):
+        for filename in glob.glob(plugins_dir + '/*'):
+            if 'Mayatomr.mll' in filename:
+                print "yest mr!"
+                if cmds.pluginInfo('Mayatomr', query=True, loaded=True):
+                    print "i dziala, zalatwione. Teraz render settings"
+                else:
+                    cmds.loadPlugin('Mayatomr', quiet=True)
+                cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string')
+                break
+    else:
+        print "Stop this madnessssssss!"
 
     cam = cmds.camera(name="RenderCamera", focusDistance=35, position=[-224.354, 79.508, 3.569], rotation=[-19.999,-90,0])  # create camera to set its background
     # Set Image Plane for camera background
     cmds.imagePlane(camera=cmds.ls(cam)[1], fileName=(path.replace("\\", "/") + '/bg.bmp'))
     cmds.setAttr("imagePlaneShape1.depth", 400)
+    cmds.setAttr("imagePlaneShape1.fit", 4)
 
 
 def import_and_animate_basic_meshes(path):
