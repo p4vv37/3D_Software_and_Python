@@ -829,31 +829,31 @@ def create_and_animate_trees():
     cmds.refresh(f=True)
     cmds.delete(palm, ch=True)
 
-    cmds.rotate(-0.051025, 1.69211, 0.366333, palm, absolute=True)  # Rotate the palm
+    cmds.rotate(0.197, 105, 0.558, palm, absolute=True)  # Rotate the palm
     cmds.move(-8.5, -4.538, 18.1, palm, absolute=True)  # Position the palm
     cmds.parent(palm, 'land', relative=True)
 
     palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=40, id_num=2, anim_start=40, anim_end=45)
     cmds.refresh(f=True)
     cmds.delete(palm, ch=True)
-    cmds.rotate(0.0226778, 0.247746, 1.71606, palm)
-    cmds.move(28, -6.3, -2.5, palm)
+    cmds.rotate(-16.935, 74.246, -23.907, palm)
+    cmds.move(29.393, -3.990, 4.526, palm)
     cmds.parent(palm, 'land', relative=True)
 
 
     palm = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
     cmds.refresh(f=True)
     cmds.delete(palm, ch=True)
-    cmds.rotate(0.0226778, 0.247746, -1.94985, palm)
-    cmds.move(34, -2.5, -34, palm)
+    cmds.move(24.498, -3.322, 36.057, palm)
+    cmds.rotate(0.023, 0.248, -1.950, palm)
     cmds.parent(palm, 'land', relative=True)
 
 
     palm = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
     cmds.refresh(f=True)
     cmds.delete(palm, ch=True)
-    cmds.rotate(0.0226778, 0.244222, -1.03672, palm)
-    cmds.move(14, -2.5, -19, palm)
+    cmds.move(24.498, -3.322, 36.057, palm)
+    cmds.rotate(0.023, 0.248, -1.950, palm)
     cmds.parent(palm, 'land', relative=True)
 
 
@@ -909,32 +909,32 @@ def create_and_assign_materials():
     cmds.connectAttr('%s.outColor' %light_dome_mat ,'%s.surfaceShader' %light_dome_sg)
 
     land_mat = cmds.shadingNode("lambert", asShader=True)
-    cmds.setAttr(land_mat+".outColorR", 1.0)
-    cmds.setAttr(land_mat+".outColorG", 0.75)
-    cmds.setAttr(land_mat+".outColorB", 0.45)
+    cmds.setAttr(land_mat+".colorR", 1.0)
+    cmds.setAttr(land_mat+".colorG", 0.75)
+    cmds.setAttr(land_mat+".colorB", 0.45)
     land_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
     cmds.connectAttr('%s.outColor' %land_mat ,'%s.surfaceShader' %land_sg)
     cmds.sets("land", e=True, forceElement=land_sg)
 
     wood_mat = cmds.shadingNode("lambert", asShader=True)
-    cmds.setAttr(wood_mat+".outColorR", 0.18)
-    cmds.setAttr(wood_mat+".outColorG", 0.13)
-    cmds.setAttr(wood_mat+".outColorB", 0.13)
+    cmds.setAttr(wood_mat+".colorR", 0.18)
+    cmds.setAttr(wood_mat+".colorG", 0.13)
+    cmds.setAttr(wood_mat+".colorB", 0.13)
     wood_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
     cmds.connectAttr('%s.outColor' %wood_mat ,'%s.surfaceShader' %wood_sg)
     #cmds.sets("land", e=True, forceElement=wood_sg)
 
     leaf_mat = cmds.shadingNode("lambert", asShader=True)
-    cmds.setAttr(leaf_mat+".outColorR", 0.4)
-    cmds.setAttr(leaf_mat+".outColorG", 1.0)
-    cmds.setAttr(leaf_mat+".outColorB", 0.3)
+    cmds.setAttr(leaf_mat+".colorR", 0.4)
+    cmds.setAttr(leaf_mat+".colorG", 1.0)
+    cmds.setAttr(leaf_mat+".colorB", 0.3)
     leaf_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
     cmds.connectAttr('%s.outColor' %leaf_mat ,'%s.surfaceShader' %leaf_sg)
 
     gray_mat = cmds.shadingNode("lambert", asShader=True)
-    cmds.setAttr(gray_mat+".outColorR", 0.5)
-    cmds.setAttr(gray_mat+".outColorG", 0.5)
-    cmds.setAttr(gray_mat+".outColorB", 0.5)
+    cmds.setAttr(gray_mat+".colorR", 0.5)
+    cmds.setAttr(gray_mat+".colorG", 0.5)
+    cmds.setAttr(gray_mat+".colorB", 0.5)
     gray_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
     cmds.connectAttr('%s.outColor' %gray_mat ,'%s.surfaceShader' %gray_sg)
 
@@ -964,149 +964,6 @@ def create_and_assign_materials():
             cmds.sets(obj, e=True, forceElement=leaf_sg)
         if "water" in obj:
             cmds.sets(obj, e=True, forceElement=water_sg)
-
-    return 0
-    # Simple, gray material for cloud and shark:
-    mat_id = MaxPlus.Class_ID(1890604853, 1242969684)  # Class_ID of Arch & Design material
-    m = MaxPlus.Factory.CreateMaterial(mat_id)
-    m.Diffuse = MaxPlus.Color(0.84, 0.84, 0.84)  # Set parameters of the material
-    m.ParameterBlock.refl_weight.Value = 0
-    m.ParameterBlock.diff_rough.Value = 1
-    m.SetName(MaxPlus.WStr('Gray_material'))
-
-    # Assign material to the shark, cloud and metal parts of the chest. Find them by name.
-    for name in ['cloud', 'shark', "lock", "lock001", "lock_ring", "chest_metal_part", "Lock_Body"]:
-        node = MaxPlus.INode.GetINodeByName(name)
-        node.Material = m
-    pass
-
-    # Water material, more material parameters included:
-    m = MaxPlus.Factory.CreateMaterial(mat_id)
-    m.ParameterBlock.diff_color.Value = MaxPlus.Color(0, 0.208633, 0.201736)
-    m.ParameterBlock.diff_rough.Value = 0.0
-    m.ParameterBlock.diff_weight.Value = 1.0
-    m.ParameterBlock.refl_color.Value = MaxPlus.Color(1, 1, 1)
-    m.ParameterBlock.refl_gloss.Value = 0.840000092983
-    m.ParameterBlock.refl_samples.Value = 8
-    m.ParameterBlock.refl_interp.Value = False
-    m.ParameterBlock.refl_hlonly.Value = False
-    m.ParameterBlock.refl_metal.Value = False
-    m.ParameterBlock.refl_weight.Value = 0.600000023842
-    m.ParameterBlock.refr_color.Value = MaxPlus.Color(0.435294, .435294, 0.435294)
-    m.ParameterBlock.refr_gloss.Value = 0.760000050068
-    m.ParameterBlock.refr_samples.Value = 8
-    m.ParameterBlock.refr_interp.Value = False
-    m.ParameterBlock.refr_ior.Value = 1.30000007153
-    m.ParameterBlock.refr_weight.Value = 0.429999947548
-    m.ParameterBlock.refr_trans_on.Value = False
-    m.ParameterBlock.refr_transc.Value = MaxPlus.Color(1, 1, 1)
-    m.ParameterBlock.refr_transw.Value = 0.0
-    m.ParameterBlock.anisotropy.Value = 1.0
-    m.ParameterBlock.anisoangle.Value = 0.0
-    m.ParameterBlock.aniso_mode.Value = 0
-    m.ParameterBlock.aniso_channel.Value = 0
-    m.ParameterBlock.refl_func_fresnel.Value = True
-    m.ParameterBlock.refl_func_low.Value = 0.20000000298
-    m.ParameterBlock.refl_func_high.Value = 1.0
-    m.ParameterBlock.refl_func_curve.Value = 5.0
-    m.ParameterBlock.refl_falloff_on.Value = True
-    m.ParameterBlock.refl_falloff_dist.Value = 19.4505996704
-    m.ParameterBlock.refl_falloff_color_on.Value = True
-    m.ParameterBlock.refl_falloff_color.Value = MaxPlus.Color(0.2, 0.2, 0.2)
-    m.ParameterBlock.opts_refl_depth.Value = 4
-    m.ParameterBlock.refl_cutoff.Value = 0.00999999977648
-    m.ParameterBlock.refr_falloff_on.Value = True
-    m.ParameterBlock.refr_falloff_dist.Value = 1.65000009537
-    m.ParameterBlock.refr_falloff_color_on.Value = True
-    m.ParameterBlock.refr_falloff_color.Value = MaxPlus.Color(0.12549, 0.988235, 1)
-    m.ParameterBlock.opts_refr_depth.Value = 6
-    m.ParameterBlock.refr_cutoff.Value = 0.00999999977648
-    m.ParameterBlock.opts_indirect_multiplier.Value = 1.0
-    m.ParameterBlock.opts_fg_quality.Value = 1.0
-    m.ParameterBlock.inter_density.Value = 2
-    m.ParameterBlock.intr_refl_samples.Value = 2
-    m.ParameterBlock.intr_refl_ddist_on.Value = False
-    m.ParameterBlock.intr_refl_ddist.Value = 0.0
-    m.ParameterBlock.intr_refr_samples.Value = 2
-    m.ParameterBlock.single_env_sample.Value = False
-    m.ParameterBlock.opts_round_corners_on.Value = False
-    m.ParameterBlock.opts_round_corners_radius.Value = 10.0
-    m.ParameterBlock.opts_round_corners_any_mtl.Value = True
-    m.ParameterBlock.opts_ao_on.Value = False
-    m.ParameterBlock.opts_ao_exact.Value = False
-    m.ParameterBlock.opts_ao_use_global_ambient.Value = False
-    m.ParameterBlock.opts_ao_samples.Value = 16
-    m.ParameterBlock.opts_ao_distance.Value = 4.0
-    m.ParameterBlock.opts_ao_dark.Value = MaxPlus.Color(0.2, 0.2, 0.2)
-    m.ParameterBlock.opts_ao_ambient.Value = MaxPlus.Color(0, 0, 0)
-    m.ParameterBlock.opts_ao_do_details.Value = True
-    m.ParameterBlock.opts_no_area_hl.Value = True
-    m.ParameterBlock.opts_1sided.Value = False
-    m.ParameterBlock.opts_do_refractive_caustics.Value = False
-    m.ParameterBlock.opts_skip_inside.Value = True
-    m.ParameterBlock.opts_hl_to_refl_balance.Value = 1.0
-    m.ParameterBlock.opts_backface_cull.Value = False
-    m.ParameterBlock.opts_propagate_alpha.Value = False
-    m.ParameterBlock.diff_color_map_on.Value = True
-    m.ParameterBlock.diff_rough_map_on.Value = True
-    m.ParameterBlock.refl_color_map_on.Value = True
-    m.ParameterBlock.refl_gloss_map_on.Value = True
-    m.ParameterBlock.refr_color_map_on.Value = False
-    m.ParameterBlock.refr_gloss_map_on.Value = True
-    m.ParameterBlock.refr_ior_map_on.Value = True
-    m.ParameterBlock.refr_transc_map_on.Value = True
-    m.ParameterBlock.refr_transw_map_on.Value = True
-    m.ParameterBlock.anisotropy_map_on.Value = True
-    m.ParameterBlock.anisoangle_map_on.Value = True
-    m.ParameterBlock.refl_falloff_color_map_on.Value = True
-    m.ParameterBlock.refr_falloff_color_map_on.Value = True
-    m.ParameterBlock.indirect_multiplier_map_on.Value = True
-    m.ParameterBlock.fg_quality_map_on.Value = True
-    m.ParameterBlock.ao_dark_map_on.Value = True
-    m.ParameterBlock.ao_ambient_map_on.Value = True
-    m.ParameterBlock.bump_map_on.Value = False
-    m.ParameterBlock.displacement_map_on.Value = True
-    m.ParameterBlock.cutout_map_on.Value = True
-    m.ParameterBlock.environment_map_on.Value = False
-    m.ParameterBlock.add_color_map_on.Value = True
-    m.ParameterBlock.radius_map_on.Value = True
-    m.SetName(MaxPlus.WStr('Water_material'))
-
-    node = MaxPlus.INode.GetINodeByName('water')
-    node.Material = m
-
-
-    # Sand:
-    m = MaxPlus.Factory.CreateMaterial(mat_id)
-    m.Diffuse = MaxPlus.Color(1, 0.74, 0.45)
-    m.ParameterBlock.refl_weight.Value = 0
-    m.ParameterBlock.diff_rough.Value = 0
-    m.SetName(MaxPlus.WStr('Sand_material'))
-
-    node = MaxPlus.INode.GetINodeByName('land')
-    node.Material = m
-
-    # Wood:
-    m = MaxPlus.Factory.CreateMaterial(mat_id)
-    m.Diffuse = MaxPlus.Color(0.18, 0.13, 0.13)
-    m.ParameterBlock.refl_weight.Value = 0
-    m.ParameterBlock.diff_rough.Value = 0
-    m.SetName(MaxPlus.WStr('Wood_material'))
-
-    node = MaxPlus.INode.GetINodeByName('chest')
-    node.Material = m
-    # Assign material 'Wood_material' to nodes with prefix 'Palm' in name
-    append_material_by_prefix(prefix='Palm', material=m)
-
-
-    # Leafs:
-    m = MaxPlus.Factory.CreateMaterial(mat_id)
-    m.Diffuse = MaxPlus.Color(0.4, 1, 0.3)
-    m.ParameterBlock.refl_weight.Value = 0
-    m.ParameterBlock.diff_rough.Value = 0
-    m.SetName(MaxPlus.WStr('Leaf_material'))
-
-    append_material_by_prefix(prefix='leaf', material=m)
 
 
 #
