@@ -295,7 +295,7 @@ def prepare_scene(path):
                 if not cmds.pluginInfo('Mayatomr', query=True, loaded=True):
                     cmds.loadPlugin('Mayatomr', quiet=True)
                 cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string')
-                print("MayaMR")
+                cmds.setAttr('miDefaultOptions.finalGather', 1)
                 break
         else:
             continue
@@ -884,6 +884,7 @@ def change_hierarchy_and_animate():
     cmds.setAttr(dome_light[0]+".miDeriveFromMaya", 0)
     cmds.setAttr(dome_light[0]+".miVisible", 0)
     cmds.setAttr(dome_light[0]+".miShadow", 0)
+    cmds.setAttr(dome_light[0]+".miTrace", 0)
     cmds.rename(dome_light[0], "dome_light")
 
     area_light = cmds.shadingNode('areaLight', asLight=True)
@@ -909,6 +910,7 @@ def create_and_assign_materials():
     cmds.setAttr(light_dome_mat+".outColorB", 1.0)
     light_dome_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
     cmds.connectAttr('%s.outColor' %light_dome_mat ,'%s.surfaceShader' %light_dome_sg)
+    cmds.rename(light_dome_mat, 'light_dome_material')
 
     land_mat = cmds.shadingNode("lambert", asShader=True)
     cmds.setAttr(land_mat+".colorR", 1.0)
@@ -917,6 +919,8 @@ def create_and_assign_materials():
     land_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
     cmds.connectAttr('%s.outColor' %land_mat ,'%s.surfaceShader' %land_sg)
     cmds.sets("land", e=True, forceElement=land_sg)
+    cmds.rename(land_mat, 'land_material')
+
 
     wood_mat = cmds.shadingNode("lambert", asShader=True)
     cmds.setAttr(wood_mat+".colorR", 0.18)
@@ -924,7 +928,8 @@ def create_and_assign_materials():
     cmds.setAttr(wood_mat+".colorB", 0.13)
     wood_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
     cmds.connectAttr('%s.outColor' %wood_mat ,'%s.surfaceShader' %wood_sg)
-    #cmds.sets("land", e=True, forceElement=wood_sg)
+    cmds.rename(wood_mat, 'wood_material')
+
 
     leaf_mat = cmds.shadingNode("lambert", asShader=True)
     cmds.setAttr(leaf_mat+".colorR", 0.4)
@@ -932,6 +937,8 @@ def create_and_assign_materials():
     cmds.setAttr(leaf_mat+".colorB", 0.3)
     leaf_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
     cmds.connectAttr('%s.outColor' %leaf_mat ,'%s.surfaceShader' %leaf_sg)
+    cmds.rename(leaf_mat, 'leaf_material')
+
 
     gray_mat = cmds.shadingNode("lambert", asShader=True)
     cmds.setAttr(gray_mat+".colorR", 0.5)
@@ -939,6 +946,8 @@ def create_and_assign_materials():
     cmds.setAttr(gray_mat+".colorB", 0.5)
     gray_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
     cmds.connectAttr('%s.outColor' %gray_mat ,'%s.surfaceShader' %gray_sg)
+    cmds.rename(gray_mat, 'gray_material')
+
 
     water_mat = cmds.shadingNode("mia_material_x", asShader=True)
     cmds.setAttr(water_mat+".diffuseR", 0.0)
@@ -954,6 +963,8 @@ def create_and_assign_materials():
     cmds.connectAttr('%s.message' %water_mat ,'%s.miPhotonShader' %water_sg)
     cmds.connectAttr('%s.message' %water_mat ,'%s.miShadowShader' %water_sg)
     cmds.connectAttr('%s.message' %water_mat ,'%s.miMaterialShader' %water_sg)
+    cmds.rename(water_mat, 'water_material')
+
 
     for obj in cmds.ls(geometry=True, ):
         if "dome_light" in obj:
