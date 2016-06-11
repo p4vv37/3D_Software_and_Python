@@ -295,14 +295,18 @@ def prepare_scene(path):
                 if not cmds.pluginInfo('Mayatomr', query=True, loaded=True):
                     cmds.loadPlugin('Mayatomr', quiet=True)
                 cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string')
+                print("MayaMR")
                 break
+        else:
+            continue
+        break
     else:
         print("Mental Ray plugin is not avaible. It can be found on the Autodesk website: ",
               "https://knowledge.autodesk.com/support/maya/downloads/caas/downloads/content/",
               "mental-ray-plugin-for-maya-2016.html")
-        alert_box = QMessageBox()
-        alert_box.setText("Mental Ray plugin is not avaible. It can be found on the Autodesk website: ",
-              "https://knowledge.autodesk.com/support/maya/downloads/caas/downloads/content/",
+        alert_box =  QtGui.QMessageBox()
+        alert_box.setText("Mental Ray plugin is not avaible. It can be found on the Autodesk website: " +
+              "https://knowledge.autodesk.com/support/maya/downloads/caas/downloads/content/" +
               "mental-ray-plugin-for-maya-2016.html")
         alert_box.exec_()
 
@@ -831,7 +835,7 @@ def create_and_animate_trees():
     cmds.move(-8.5, -4.538, 18.1, palm, absolute=True)  # Position the palm
     cmds.parent(palm, 'land', relative=True)
 
-    palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=40, id_num=2, anim_start=40, anim_end=45)
+    palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=34, id_num=2, anim_start=40, anim_end=45)
     cmds.refresh(f=True)
     cmds.delete(palm, ch=True)
     cmds.rotate(-16.935, 74.246, -23.907, palm)
@@ -850,8 +854,8 @@ def create_and_animate_trees():
     palm = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
     cmds.refresh(f=True)
     cmds.delete(palm, ch=True)
-    cmds.move(24.498, -3.322, 36.057, palm)
-    cmds.rotate(0.023, 0.248, -1.950, palm)
+    cmds.move(4.353, -1.083, 22.68, palm)
+    cmds.rotate(-0.088, -105, 952, palm)
     cmds.parent(palm, 'land', relative=True)
 
 
@@ -890,7 +894,7 @@ def change_hierarchy_and_animate():
     cmds.setAttr(area_light+".intensity", 8)
     cmds.setAttr(area_light+".areaLight", 1)
     cmds.setAttr(area_light+".areaType", 1)
-    cmds.setAttr(area_light+".decayRate", 2)
+    cmds.setAttr(area_light+".decayRate", 3)
 
 
 def create_and_assign_materials():
