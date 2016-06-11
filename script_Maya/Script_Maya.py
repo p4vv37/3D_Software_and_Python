@@ -292,15 +292,19 @@ def prepare_scene(path):
     for plugins_dir in plugins_dirs.split(';'):
         for filename in glob.glob(plugins_dir + '/*'):
             if 'Mayatomr.mll' in filename:
-                print "yest mr!"
-                if cmds.pluginInfo('Mayatomr', query=True, loaded=True):
-                    print "i dziala, zalatwione. Teraz render settings"
-                else:
+                if not cmds.pluginInfo('Mayatomr', query=True, loaded=True):
                     cmds.loadPlugin('Mayatomr', quiet=True)
                 cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string')
                 break
     else:
-        print "Stop this madnessssssss!"
+        print("Mental Ray plugin is not avaible. It can be found on the Autodesk website: ",
+              "https://knowledge.autodesk.com/support/maya/downloads/caas/downloads/content/",
+              "mental-ray-plugin-for-maya-2016.html")
+        alert_box = QMessageBox()
+        alert_box.setText("Mental Ray plugin is not avaible. It can be found on the Autodesk website: ",
+              "https://knowledge.autodesk.com/support/maya/downloads/caas/downloads/content/",
+              "mental-ray-plugin-for-maya-2016.html")
+        alert_box.exec_()
 
     cam = cmds.camera(name="RenderCamera", focusDistance=35, position=[-224.354, 79.508, 3.569], rotation=[-19.999,-90,0])  # create camera to set its background
     # Set Image Plane for camera background
