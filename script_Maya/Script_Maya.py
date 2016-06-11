@@ -294,6 +294,7 @@ def prepare_scene(path):
             if 'Mayatomr.mll' in filename:
                 if not cmds.pluginInfo('Mayatomr', query=True, loaded=True):
                     cmds.loadPlugin('Mayatomr', quiet=True)
+                cmds.refresh(f=True)
                 cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string')
                 cmds.setAttr('miDefaultOptions.finalGather', 1)
                 break
