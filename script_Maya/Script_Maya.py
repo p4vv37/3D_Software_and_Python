@@ -193,7 +193,7 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
 
         current_segment_name = 'Palm_element_' + str(id_num) + '_' + str(i)
         cmds.instance('segment_orginal', n=current_segment_name)  # Create an instance with segment geometry
-        cmds.move(diameter * i/2, current_segment_name, moveY=True, absolute=True)  # Every node should be H higher then last one
+        cmds.move(diameter * i, current_segment_name, moveY=True, absolute=True)  # Every node should be H higher then last one
 
         # The nodes at the top of the tree should be smaller then those at the bottom:
         cmds.scale(1.0 - (i / (segs_num * 4.0)), 1.0 - (i / (segs_num * 4.0)), 1, current_segment_name)
@@ -828,37 +828,35 @@ def create_and_animate_trees():
     It was created to show how to create basic geometry objects, use instances and use modificators.
     """
 
-    palm = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
+    palm1 = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
+
+    palm2 = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=34, id_num=2, anim_start=40, anim_end=45)
+
+    palm3 = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
+
+    palm4 = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
+
     cmds.currentTime(55)
     cmds.refresh(f=True)
-    cmds.delete(palm, ch=True)
+    cmds.delete(palm1, ch=True)
+    cmds.rotate(0.197, 105, 0.558, palm1, absolute=True)  # Rotate the palm
+    cmds.move(-8.5, -4.538, 18.1, palm1, absolute=True)  # Position the palm
+    cmds.parent(palm1, 'land', relative=True)
 
-    cmds.rotate(0.197, 105, 0.558, palm, absolute=True)  # Rotate the palm
-    cmds.move(-8.5, -4.538, 18.1, palm, absolute=True)  # Position the palm
-    cmds.parent(palm, 'land', relative=True)
+    cmds.delete(palm2, ch=True)
+    cmds.rotate(-16.935, 74.246, -23.907, palm2)
+    cmds.move(29.393, -3.990, 4.526, palm2)
+    cmds.parent(palm2, 'land', relative=True)
 
-    palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=34, id_num=2, anim_start=40, anim_end=45)
-    cmds.refresh(f=True)
-    cmds.delete(palm, ch=True)
-    cmds.rotate(-16.935, 74.246, -23.907, palm)
-    cmds.move(29.393, -3.990, 4.526, palm)
-    cmds.parent(palm, 'land', relative=True)
+    cmds.delete(palm3, ch=True)
+    cmds.move(24.498, -3.322, 36.057, palm3)
+    cmds.rotate(0.023, 0.248, -1.950, palm3)
+    cmds.parent(palm3, 'land', relative=True)
 
-
-    palm = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
-    cmds.refresh(f=True)
-    cmds.delete(palm, ch=True)
-    cmds.move(24.498, -3.322, 36.057, palm)
-    cmds.rotate(0.023, 0.248, -1.950, palm)
-    cmds.parent(palm, 'land', relative=True)
-
-
-    palm = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
-    cmds.refresh(f=True)
-    cmds.delete(palm, ch=True)
-    cmds.move(4.353, -1.083, 22.68, palm)
-    cmds.rotate(-150, -102.569, 872.616, palm)
-    cmds.parent(palm, 'land', relative=True)
+    cmds.delete(palm4, ch=True)
+    cmds.move(4.353, -1.083, 22.68, palm4)
+    cmds.rotate(-150, -102.569, 872.616, palm4)
+    cmds.parent(palm4, 'land', relative=True)
 
 
 
