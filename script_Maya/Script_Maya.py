@@ -898,6 +898,8 @@ def change_hierarchy_and_animate():
     cmds.setAttr(area_light+".areaType", 1)
     cmds.setAttr(area_light+".decayRate", 2)
     cmds.setAttr(area_light+".areaHiSamples", 64)
+    cmds.move(-230.59, 178.425, 99.192, area_light)
+    cmds.rotate(0, 178.425, -37.987, area_light)
 
 
 def create_and_assign_materials():
