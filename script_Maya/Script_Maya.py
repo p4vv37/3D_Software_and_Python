@@ -6,8 +6,8 @@
 # www.pkowalski.com
 # www.behance.net/pkowalski
 #
-# Open the script from 3D Studio Max Listener with command:
-# python.ExecuteFile "path`to`file\main.py"
+# Open the script from Script Editor with command:
+# execcfile('path:\to\Script_Maya.py')
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -53,6 +53,14 @@ from pymel.all import mel
 
 
 def frange(start, end, jump):
+    """
+    Function returns a list of floats, similar to int range(function)
+
+    :param start: float - Start of a range
+    :param end: float - End of a range
+    :param jump: float - Interval between values
+    :rtype : list of floats
+    """
     while start < end:
         yield start
         start += jump
@@ -61,13 +69,9 @@ def frange(start, end, jump):
 def set_scale_keys(target, keyframes):
     """
     Function animates the scale of given object by creating the given keyframes.
-    Animation is done with a use of AutoKey function of 3Ds Max.
-    The AutoKey function can be set with:
-    MaxPlus.Animation.SetAnimateButtonState(Bool)
 
-    :param obj:  MaxPlus.INode - Object which scale will be animated
+    :param obj:  String - Name of an object which scale will be animated
     :param keyframes: Python list - Keyframes that will be created: [[int time, float scale (1 = 100%),] ...]
-    :param multiply_by_ticks: Boolean - Set to False if time in list of keyframes is already multiplied by TICKS.
     """
 
     for keyframe in keyframes:  # For every keyframe from the list of keyframes scale object at proper time
@@ -103,13 +107,11 @@ def leafs_rotations(number_of_leafs):
 def set_position_keys(target, keyframes):
     """
     Function animates the position of given object by creating the given keyframes.
-    Animation is done with a use of AutoKey function of 3Ds Max.
-    The AutoKey function can be set with:
-    MaxPlus.Animation.SetAnimateButtonState(Bool)
 
-    :param obj:  MaxPlus.INode - Object which scale will be animated
+    :param obj:  String - Name of an object which scale will be animated
     :param keyframes: Python list - Keyframes that will be created: [[int time, [float x, float y, float z]], ...]
     """
+
     for keyframe in keyframes:  # For every keyframe from the list of keyframes scale object at proper time
         cmds.setKeyframe(target, attribute='translateX', v=keyframe[0][0], time=keyframe[1], itt="fast", ott="fast")
         cmds.setKeyframe(target, attribute='translateY', v=keyframe[0][1], time=keyframe[1], itt="fast", ott="fast")
@@ -117,26 +119,33 @@ def set_position_keys(target, keyframes):
 
 
 def create_object(verts_pos, face_verts):
-    """
-    Creates a simple mesh of shark fin.
-    Function is written in a readable and easy to interpret, but not effective way.
-    The mesh is created based on saved positions of verticles and parameters of faces.
-    Data has been generated from object modeled in 3Ds Max with a use of obj_to_code.ms script.
-    Similar functions can be used in importer plugin.
 
-    :param mesh: MaxPlus.Mesh - The mesh that will be modified
+    """
+    Function creates an object with mesh given by vertice and face data.
+
+    :type face_verts: Python list
+    :type verts_pos: Python list
     """
 
     shark_mesh = om.MObject()
-    points = om.MFloatPointArray()
+    points = om.MFloatPointArray() # An array that is storing positions od vertices. Do not include id of vertices
 
     for vert in verts_pos:  # add every point to Maya float points array
         p = om.MFloatPoint(vert[0], vert[2], -vert[1])
         points.append(p)
 
-    face_connects = om.MIntArray()  # an array for vertice numbers per face
+    face_connects = om.MIntArray()  # an array for vertice numbers per face.
     face_counts = om.MIntArray()  # an array for total number of vertices per face
     for verts in face_verts:
+        '''
+        In Maya mesh is created on a base of two arrays: list of vertice numbers and list of numbers of vertices
+        of faces. Vertice numbers from the first list are not grouped by faces, this is just a one dimmension array.
+        Based on this list only it would be impossible to recreate mesh, becouse number of vertices in faces may vary
+        (in this example every face have 3 vertices, but this is not obligatory).
+        The second array stores the number of vertices of faces. From this list Mata gets a number of vertices of a
+        face, let's call it N, then assigns next N vertices to this face. The process is repeated for every face.
+        '''
+
         face_connects.append(verts[0])  # Append vertices of face.
         face_connects.append(verts[1])
         face_connects.append(verts[2])
@@ -145,11 +154,12 @@ def create_object(verts_pos, face_verts):
     mesh_fs.create(points, face_counts, face_connects, parent=shark_mesh)
     mesh_fs.updateSurface()
     node_name = mesh_fs.name()
-    cmds.polySoftEdge(node_name, a=30, ch=1)
+    cmds.polySoftEdge(node_name, a=30, ch=1) # Automatically soften the edges of the mesh
 
     # assign new mesh to default shading group
     cmds.sets(node_name, e=True, fe='initialShadingGroup')
-    return cmds.listRelatives(node_name, fullPath=True, parent=True)
+    return cmds.listRelatives(node_name, fullPath=True, parent=True) # node name stores a name of Shape node.
+    #  Most functions need a Transform node. Ths line returns it.
 
 
 def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim_end):
@@ -168,7 +178,7 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
 
     keyframe_interval = (anim_end - anim_start) / (segs_num + 1.0)  # interval of scale keframes of the pine segments
 
-    anim_start /= 25.0  # Convert frames to the internal 3Ds Max time unit.
+    anim_start /= 25.0  # Convert frames to the time
     anim_end /= 25.0  # Need to convert now, because the number of segments is probably
     keyframe_interval /= 25.0  # grater then the number of frames between the start and the end o the animation of tree
 
@@ -178,22 +188,27 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
 
     keyframe_list.reverse()  # Because the pop() will be used and the first frame should be the smallest number
 
-    source_segment = 'segment_orginal'
-    cmds.polyCone(r=diameter/2, h=-diameter * 8, n=source_segment, subdivisionsY=5)
-    cmds.polyDelFacet(source_segment + '.f[20:79]', source_segment + '.f[81:100]')
-    cmds.polyNormal(name=source_segment, normalMode=0)
-    bbox = cmds.exactWorldBoundingBox(source_segment)
-    bottom = [(bbox[0] + bbox[3]) / 2, bbox[1], (bbox[2] + bbox[5]) / 2]
-    cmds.xform(source_segment, piv=bottom, ws=True)
+    source_segment = 'segment_orginal' # Create an object that will be instanced
+    cmds.polyCone(r=diameter/2, h=-diameter * 8, n=source_segment, subdivisionsY=5) # Create a cone. Cone will have a
+    # sharp tip, that will be removed later
+    cmds.polyDelFacet(source_segment + '.f[20:79]', source_segment + '.f[81:100]') # delete polgons of sharp end of cone
+    cmds.polyNormal(name=source_segment, normalMode=0) # Reverse face normals.
+    #  Normals are reversed, because "h" parameter is a negative number.
+    bbox = cmds.exactWorldBoundingBox(source_segment) # The pivot is placed currently at the end of sharp tip of
+    # the cone that had been removed. Pivot will be placed at the bottom of the objects now with a use of
+    # its bounding box parameters.
+    bottom_of_mesh = [(bbox[0] + bbox[3]) / 2, bbox[1], (bbox[2] + bbox[5]) / 2]
+    cmds.xform(source_segment, piv=bottom_of_mesh, ws=True)
 
-    segments_tab = []  # A list of all the segments of the tree
+    segments_tab = []  # A list of all the segments of the tree.
     for i in xrange(segs_num):
         cmds.refresh(f=True)
         # Create segments of pine of the palm tree
 
         current_segment_name = 'Palm_element_' + str(id_num) + '_' + str(i)
         cmds.instance('segment_orginal', n=current_segment_name)  # Create an instance with segment geometry
-        cmds.move(diameter * i, current_segment_name, moveY=True, absolute=True)  # Every node should be H higher then last one
+        cmds.move(diameter * i, current_segment_name, moveY=True, absolute=True)
+        # Every node should be diameter higher then last one
 
         # The nodes at the top of the tree should be smaller then those at the bottom:
         cmds.scale(1.0 - (i / (segs_num * 4.0)), 1.0 - (i / (segs_num * 4.0)), 1, current_segment_name)
@@ -201,20 +216,19 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
         anim_start_frame = keyframe_list.pop()  # Pop one time from the keyframe times list
         set_scale_keys(target=current_segment_name, keyframes=[[0.001, str(anim_start_frame) + 'sec'],
                                                                [1.2, str(anim_start_frame + keyframe_interval) + 'sec'],
-                                                               [1,
-                                                                str(anim_start_frame + 2 * keyframe_interval) + 'sec']])
+                                                               [1, str(anim_start_frame + 2*keyframe_interval) + 'sec']
+                                                               ])
 
-    cmds.delete(source_segment)
+    cmds.delete(source_segment) # Delete the source object, instance will not be removed
     for current_segment_name in segments_tab:
-        # If the segment is not the first segment of the tree then it should be parented to the previous one.
+        # Parent every segment to the root node. If there is no root node, then this segment will be a root.
         try:
             cmds.parent(current_segment_name, root,
-                        relative=True)  # if there is not old_segment_node the command will fail
+                        relative=True)
         except:  # If the function failed then this is a first node of the tree and will not have any parent
-            #cmds.parent(current_segment_name, 'land', relative=True)
             root = current_segment_name
 
-    # The leaf will be created from saved vertex data in a simmilar way to cloud.
+    # The leaf will be created from saved vertex data in a similar way to cloud.
 
     verts_list = [[0.0874634, 0.283682, -0.150049], [-9.33334, 3.45312, -5.19915], [-0.0979366, -0.242619, -0.151449],
                   [0.0756626, 0.288981, 0.00435066], [-0.110037, -0.237219, 0.00305176],
@@ -245,31 +259,33 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
                   [19, 23, 35], [22, 24, 36], [17, 14, 26], [27, 15, 12], [26, 14, 15], [31, 7, 10], [25, 13, 17],
                   [34, 10, 18], [13, 16, 38], [12, 39, 38]]
 
-    leaf_source_name = create_object(verts_list, faces_list)
+    leaf_source_name = create_object(verts_list, faces_list) # Create the leaf object that will be instanced
     cmds.rename(leaf_source_name, "leaf")
 
     anim_start_frame = keyframe_list.pop()
 
-    last_node = segments_tab[-1]
+    last_node = segments_tab[-1] # Get the last element of the palm tree. It will be a parent of leafs.
     for rot_z in leafs_rotations(number_of_leafs=leafs_num):  # Leafs should be distributed around the pine.
         current_leaf_name = "leaf_" + str(id_num) + '_' + str(i)
         cmds.instance("leaf", n=current_leaf_name)
         cmds.move(diameter*4, current_leaf_name, moveY=True, relative=True)
 
         cmds.rotate(random.uniform(-math.pi / 15, math.pi / 15), rot_z, random.uniform(-math.pi / 8, math.pi / 10),
-                    current_leaf_name)  # The rotation can be set with a number of ways. Here, the current rotation is read
-        # and modified as Euler. Also, the quaternon can be used with Rotate function.
+                    current_leaf_name)
         set_scale_keys(target=current_leaf_name,
                        keyframes=[[0.001, str(anim_start_frame)+"sec"],
                                   [1, str(anim_start_frame + keyframe_interval)+"sec"]])
         cmds.parent(current_leaf_name, last_node, relative = True)
         cmds.scale(0.9, 0.9, 0.9, current_leaf_name)
-        #segments_tab.append(current_leaf_name)
         i += 1
 
     cmds.delete("leaf")
+
+    # Now the bend modifier will be applied to the source element of a palm tree. Other elements wil be also affected
+    # becouse they are parented to it.
     cmds.nonLinear(root, type='bend', after = True, curvature=2*bending, lowBound=0)
 
+    # Rescale the handle of a modifier, it will look nicer
     for name in cmds.ls():
         if name.endswith('Handle'):
             cmds.scale(60,60,60,name)
@@ -279,7 +295,7 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
 
 def prepare_scene(path):
     """
-    The function sets the basic parameters of the scene: time range, tangent type of keyframes and render settings.
+    The function sets the basic parameters of the scene: time range and render settings.
 
     :param path: string - The directory with necessary files
     """
@@ -288,15 +304,30 @@ def prepare_scene(path):
 
     cmds.autoKeyframe(state=False)  # Make sure, that the AutoKey button is disabled
 
-    plugins_dirs = mel.getenv("MAYA_PLUG_IN_PATH")
+    plugins_dirs = mel.getenv("MAYA_PLUG_IN_PATH") # Mental Ray plugin is necessaryfor this script to run propperly.
+    # Next lines check if the plugin is avaible and installs it or displays an allert window.
+    # The plugins are accualy files placed in "MAYA_PLUG_IN_PATH" directories, so this script gets those paths
+    # and checks if there is a mental ray plugin file.
+
     for plugins_dir in plugins_dirs.split(';'):
-        for filename in glob.glob(plugins_dir + '/*'):
-            if 'Mayatomr.mll' in filename:
+        for filename in glob.glob(plugins_dir + '/*'): # For every filename in every directory of MAYA_PLUG_IN_PATH
+            if 'Mayatomr.mll' in filename: # if there is a mental ray plugin file then make sure it is loaded
                 if not cmds.pluginInfo('Mayatomr', query=True, loaded=True):
                     cmds.loadPlugin('Mayatomr', quiet=True)
-                cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string')
+                cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string') # Set the render engine to MR
+                # Next lines are a workaround for some bugs. The first one is that the render settings window has to be
+                # opened before setting attributes of the render. If it would not be, thhen Maya would display an error
+                # saying that such options do not exist.
+                # The second bug is that after running this scrpt the window was blank and it was impossible to set
+                # parameters. This is a common bug and it can be repaired by closing this window with
+                # cmds.deleteUI('unifiedRenderGlobalsWindow') command
+
                 cmds.RenderGlobalsWindow()
                 cmds.refresh(f=True)
+                cmds.deleteUI('unifiedRenderGlobalsWindow')
+                cmds.setAttr('miDefaultOptions.finalGather', 1)
+                cmds.setAttr('miDefaultOptions.miSamplesQualityR', 1)
+                cmds.setAttr('miDefaultOptions.lightImportanceSamplingQuality', 2)
                 cmds.setAttr('miDefaultOptions.finalGather', 1)
                 break
         else:
@@ -312,7 +343,8 @@ def prepare_scene(path):
               "mental-ray-plugin-for-maya-2016.html")
         alert_box.exec_()
 
-    cam = cmds.camera(name="RenderCamera", focusDistance=35, position=[-224.354, 79.508, 3.569], rotation=[-19.999,-90,0])  # create camera to set its background
+    cam = cmds.camera(name="RenderCamera", focusDistance=35, position=[-224.354, 79.508, 3.569],
+                      rotation=[-19.999,-90,0])  # create camera to set background (imageplane)
     # Set Image Plane for camera background
     cmds.imagePlane(camera=cmds.ls(cam)[1], fileName=(path.replace("\\", "/") + '/bg.bmp'))
     cmds.setAttr("imagePlaneShape1.depth", 400)
@@ -603,9 +635,9 @@ def create_shark_and_cloud():
 
 def create_chest():
     """
-    Function creates an object with a use of macro recorded frm 3Ds max.
-    This function shows how to use macros. Macros are actions recorded with a MaxScript Listener and they can be
-    evaluated as MaxScripts. Macros are a very simple way of creating simple scripts.
+    Function creates an object with a use of macro recorded frm Maya.
+    This function shows how to use macros. Macros are actions recorded with a Maya and they can be
+    evaluated as Mel commands. Macros are a very simple way of creating simple scripts.
     """
     recorded_macro = '''
 
@@ -829,19 +861,22 @@ def create_and_animate_trees():
     """
 
     palm1 = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
-
     palm2 = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=34, id_num=2, anim_start=40, anim_end=45)
-
     palm3 = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
-
     palm4 = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
 
-    cmds.currentTime(55)
+    cmds.currentTime(55) # The removal of history had strange effect when it was applied before tree animation
+    # Next line is intended to avoid a bug. If the history has to be deleted with a cmds.delete function. If it
+    # would not be modified then the bend modifictor would have to be moved wit an object or it would affect an object
+    # in different ways then desired during a changes in its position. The problem is, that during that an evaluation
+    # of commands may take some time and the removing of history resulted in not deformed mesh or a partialy
+    # deformed mesh. This is why cmds.refresh() ommand was used.
     cmds.refresh(f=True)
+
     cmds.delete(palm1, ch=True)
     cmds.rotate(0.197, 105, 0.558, palm1, absolute=True)  # Rotate the palm
     cmds.move(-8.5, -4.538, 18.1, palm1, absolute=True)  # Position the palm
-    cmds.parent(palm1, 'land', relative=True)
+    cmds.parent(palm1, 'land', relative=True) # Rename it
 
     cmds.delete(palm2, ch=True)
     cmds.rotate(-16.935, 74.246, -23.907, palm2)
@@ -864,12 +899,12 @@ def create_and_animate_trees():
 
 def change_hierarchy_and_animate():
     """
-    Function modifies the hierarchy of scen and creates some final animations, that ware not possible to create earlier.
+    Function modifies the hierarchy of scene and creates some final animations, that ware not possible to create earlier.
     It also creates cameras and lights.
     """
-    cmds.lookThru( 'perspView', 'RenderCamera1')
+    cmds.lookThru( 'perspView', 'RenderCamera1') # Change the perspective viewport to the render camera.
 
-    top_locator = cmds.spaceLocator()
+    top_locator = cmds.spaceLocator() # Parent for all the elemements that will rotate together
     objects_list = ['land', 'water', 'cloud', 'shark', ]
 
     for obj in objects_list:
@@ -878,12 +913,12 @@ def change_hierarchy_and_animate():
     cmds.setKeyframe(top_locator, attribute='rotateY', v=20, time=260, itt="plateau", ott="plateau")
     cmds.setKeyframe(top_locator, attribute='rotateY', v=0, time=0, itt="linear", ott="linear")
 
-    dome_light = cmds.polySphere(r=500);
-    cmds.polyNormal(dome_light, normalMode=0)
+    dome_light = cmds.polySphere(r=500) # This sphere is a substitute of a skylight in 3Ds Max
+    cmds.polyNormal(dome_light, normalMode=0) # The normals have to point to inside
 
-    cmds.setAttr(dome_light[0]+".miDeriveFromMaya", 0)
-    cmds.setAttr(dome_light[0]+".miVisible", 0)
-    cmds.setAttr(dome_light[0]+".miShadow", 0)
+    cmds.setAttr(dome_light[0]+".miDeriveFromMaya", 0) # Enable changes in object render settings
+    cmds.setAttr(dome_light[0]+".miVisible", 0) # This object will be invisible to camera
+    cmds.setAttr(dome_light[0]+".miShadow", 0) # And will not affect shadows
     cmds.rename(dome_light[0], "dome_light")
 
     area_light = cmds.shadingNode('areaLight', asLight=True)
@@ -901,7 +936,7 @@ def change_hierarchy_and_animate():
 def create_and_assign_materials():
     """
     Function creates and applies materials to the objects
-    It was created to show how to use the Material Manager.
+    It was created to show how to use materials.
     """
 
     light_dome_mat = cmds.shadingNode("surfaceShader", asShader=True)
@@ -979,7 +1014,7 @@ def create_and_assign_materials():
     cmds.rename(water_mat, 'water_material')
 
 
-    for obj in cmds.ls(geometry=True, ):
+    for obj in cmds.ls(geometry=True, ) # Assign materials to objects
         if "dome_light" in obj:
             cmds.sets(obj, e=True, forceElement=light_dome_sg)
         if "LOCK" in obj:
@@ -1061,7 +1096,7 @@ class DataTable:
 
     def reset(self):
         """
-        Function resets the max file and parameters of this object to the initial state.
+        Function resets the file and parameters of this object to the initial state.
         """
 
         self.max_step = 0
@@ -1082,7 +1117,7 @@ class GUI(QtGui.QDialog):
 
         self.resize(250, 150)  # Set the size of window
         self.center()
-        self.setWindowTitle('Skrypt - 3Ds Max')  # Set the title of window
+        self.setWindowTitle('Skrypt - Maya')  # Set the title of window
         self.setWindowFlags(QtCore.Qt.Tool)  # The tool window will always be kept on top of parent (maya_main_window)
 
         # Delete UI on close to avoid winEvent error
