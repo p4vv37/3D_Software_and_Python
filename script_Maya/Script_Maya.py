@@ -1174,6 +1174,7 @@ class GUI(QtGui.QDialog):
             self.data_table.next_step += 1
             line = functions_with_names[action_num]
             self.data_table.run(text=line[0], function=line[1], path=line[2])
+        print "Completed."
 
 
 if __name__ == "__main__":
