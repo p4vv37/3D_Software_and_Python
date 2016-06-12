@@ -152,12 +152,12 @@ def create_object(verts_pos, face_verts):
     return cmds.listRelatives(node_name, fullPath=True, parent=True)
 
 
-def create_palm(radious, segs_num, leafs_num, bending, id_num, anim_start, anim_end):
+def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim_end):
     """
     Function creates a single palm tree.
     This function was created to show how to create basic geometry objects, use instances and use modificators.
 
-    :param radious: float - inner diameter of pine
+    :param diameter: float - inner diameter of pine
     :param segs_num: int - number of segments of the pine
     :param leafs_num: int - number of leafs
     :param bending: float - how much bended the pine is
@@ -179,7 +179,7 @@ def create_palm(radious, segs_num, leafs_num, bending, id_num, anim_start, anim_
     keyframe_list.reverse()  # Because the pop() will be used and the first frame should be the smallest number
 
     source_segment = 'segment_orginal'
-    cmds.polyCone(r=radious, h=-radious * 8, n=source_segment, subdivisionsY=5)
+    cmds.polyCone(r=diameter/2, h=-diameter * 8, n=source_segment, subdivisionsY=5)
     cmds.polyDelFacet(source_segment + '.f[20:79]', source_segment + '.f[81:100]')
     cmds.polyNormal(name=source_segment, normalMode=0)
     bbox = cmds.exactWorldBoundingBox(source_segment)
@@ -193,7 +193,7 @@ def create_palm(radious, segs_num, leafs_num, bending, id_num, anim_start, anim_
 
         current_segment_name = 'Palm_element_' + str(id_num) + '_' + str(i)
         cmds.instance('segment_orginal', n=current_segment_name)  # Create an instance with segment geometry
-        cmds.move(radious * i, current_segment_name, moveY=True, absolute=True)  # Every node should be H higher then last one
+        cmds.move(diameter * i/2, current_segment_name, moveY=True, absolute=True)  # Every node should be H higher then last one
 
         # The nodes at the top of the tree should be smaller then those at the bottom:
         cmds.scale(1.0 - (i / (segs_num * 4.0)), 1.0 - (i / (segs_num * 4.0)), 1, current_segment_name)
@@ -254,7 +254,7 @@ def create_palm(radious, segs_num, leafs_num, bending, id_num, anim_start, anim_
     for rot_z in leafs_rotations(number_of_leafs=leafs_num):  # Leafs should be distributed around the pine.
         current_leaf_name = "leaf_" + str(id_num) + '_' + str(i)
         cmds.instance("leaf", n=current_leaf_name)
-        cmds.move(radious*4, current_leaf_name, moveY=True, relative=True)
+        cmds.move(diameter*4, current_leaf_name, moveY=True, relative=True)
 
         cmds.rotate(random.uniform(-math.pi / 15, math.pi / 15), rot_z, random.uniform(-math.pi / 8, math.pi / 10),
                     current_leaf_name)  # The rotation can be set with a number of ways. Here, the current rotation is read
@@ -294,8 +294,9 @@ def prepare_scene(path):
             if 'Mayatomr.mll' in filename:
                 if not cmds.pluginInfo('Mayatomr', query=True, loaded=True):
                     cmds.loadPlugin('Mayatomr', quiet=True)
-                cmds.refresh(f=True)
                 cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string')
+                cmds.refresh(f=True)
+                cmds.RenderGlobalsWindow()
                 cmds.setAttr('miDefaultOptions.finalGather', 1)
                 break
         else:
@@ -827,7 +828,7 @@ def create_and_animate_trees():
     It was created to show how to create basic geometry objects, use instances and use modificators.
     """
 
-    palm = create_palm(radious=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
+    palm = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
     cmds.currentTime(55)
     cmds.refresh(f=True)
     cmds.delete(palm, ch=True)
@@ -836,7 +837,7 @@ def create_and_animate_trees():
     cmds.move(-8.5, -4.538, 18.1, palm, absolute=True)  # Position the palm
     cmds.parent(palm, 'land', relative=True)
 
-    palm = create_palm(radious=1.6, segs_num=20, leafs_num=9, bending=34, id_num=2, anim_start=40, anim_end=45)
+    palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=34, id_num=2, anim_start=40, anim_end=45)
     cmds.refresh(f=True)
     cmds.delete(palm, ch=True)
     cmds.rotate(-16.935, 74.246, -23.907, palm)
@@ -844,7 +845,7 @@ def create_and_animate_trees():
     cmds.parent(palm, 'land', relative=True)
 
 
-    palm = create_palm(radious=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
+    palm = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
     cmds.refresh(f=True)
     cmds.delete(palm, ch=True)
     cmds.move(24.498, -3.322, 36.057, palm)
@@ -852,7 +853,7 @@ def create_and_animate_trees():
     cmds.parent(palm, 'land', relative=True)
 
 
-    palm = create_palm(radious=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
+    palm = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
     cmds.refresh(f=True)
     cmds.delete(palm, ch=True)
     cmds.move(4.353, -1.083, 22.68, palm)
@@ -970,9 +971,9 @@ def create_and_assign_materials():
     cmds.setAttr(water_mat+".refr_falloff_colorR", 0.125)
     cmds.setAttr(water_mat+".refr_falloff_colorG", 0.988)
     cmds.setAttr(water_mat+".refr_falloff_colorB", 1.0)
-    cmds.setAttr(water_mat+".reflfalloff_colorR", 0.2)
-    cmds.setAttr(water_mat+".reflfalloff_colorG", 0.2)
-    cmds.setAttr(water_mat+".reflfalloff_colorB", 0.2)
+    cmds.setAttr(water_mat+".refl_falloff_colorR", 0.2)
+    cmds.setAttr(water_mat+".refl_falloff_colorG", 0.2)
+    cmds.setAttr(water_mat+".refl_falloff_colorB", 0.2)
     water_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
     cmds.connectAttr('%s.message' %water_mat ,'%s.miPhotonShader' %water_sg)
     cmds.connectAttr('%s.message' %water_mat ,'%s.miShadowShader' %water_sg)
