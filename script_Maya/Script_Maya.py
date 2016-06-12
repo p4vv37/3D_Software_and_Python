@@ -295,8 +295,8 @@ def prepare_scene(path):
                 if not cmds.pluginInfo('Mayatomr', query=True, loaded=True):
                     cmds.loadPlugin('Mayatomr', quiet=True)
                 cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string')
-                cmds.refresh(f=True)
                 cmds.RenderGlobalsWindow()
+                cmds.refresh(f=True)
                 cmds.setAttr('miDefaultOptions.finalGather', 1)
                 break
         else:
