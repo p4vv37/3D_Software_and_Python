@@ -887,17 +887,15 @@ def change_hierarchy_and_animate():
     cmds.rename(dome_light[0], "dome_light")
 
     area_light = cmds.shadingNode('areaLight', asLight=True)
-    cmds.move(0, 0, 0, area_light, absolute=True)
-    cmds.rotate(0, 0, 0, area_light, absolute=True)
     cmds.scale(25, 25, 25, area_light, absolute=True)
+    cmds.move(-230.59, 178.425, 99.192, area_light)
+    cmds.rotate(0, -68.929, -37.987, area_light)
 
     cmds.setAttr(area_light+".intensity", 120000.0)
     cmds.setAttr(area_light+".areaLight", 1)
     cmds.setAttr(area_light+".areaType", 1)
     cmds.setAttr(area_light+".decayRate", 2)
     cmds.setAttr(area_light+".areaHiSamples", 64)
-    cmds.move(-230.59, 178.425, 99.192, area_light)
-    cmds.rotate(0, 178.425, -37.987, area_light)
 
 
 def create_and_assign_materials():
@@ -1174,7 +1172,6 @@ class GUI(QtGui.QDialog):
             self.data_table.next_step += 1
             line = functions_with_names[action_num]
             self.data_table.run(text=line[0], function=line[1], path=line[2])
-        print "Completed."
 
 
 if __name__ == "__main__":
