@@ -97,7 +97,7 @@ def leafs_rotations(number_of_leafs):
     jump = (y - x) / float(number_of_leafs)  # Devide the range by the number of leafs and create an array
 
     while x < y:
-        random.seed()  #
+        random.seed()
         angles.append(random.uniform(x - (jump / 3.0), x + (jump / 3.0)))  # every leaf is placed +/- (1/3)*interval
         x += jump
 
@@ -137,14 +137,12 @@ def create_object(verts_pos, face_verts):
     face_connects = om.MIntArray()  # an array for vertice numbers per face.
     face_counts = om.MIntArray()  # an array for total number of vertices per face
     for verts in face_verts:
-        '''
-        In Maya mesh is created on a base of two arrays: list of vertice numbers and list of numbers of vertices
-        of faces. Vertice numbers from the first list are not grouped by faces, this is just a one dimmension array.
-        Based on this list only it would be impossible to recreate mesh, becouse number of vertices in faces may vary
-        (in this example every face have 3 vertices, but this is not obligatory).
-        The second array stores the number of vertices of faces. From this list Mata gets a number of vertices of a
-        face, let's call it N, then assigns next N vertices to this face. The process is repeated for every face.
-        '''
+        # In Maya mesh is created on a base of two arrays: list of vertice numbers and list of numbers of vertices
+        # of faces. Vertice numbers from the first list are not grouped by faces, this is just a one dimmension array.
+        # Based on this list only it would be impossible to recreate mesh, becouse number of vertices in faces may vary
+        # (in this example every face have 3 vertices, but this is not obligatory).
+        #  The second array stores the number of vertices of faces. From this list Mata gets a number of vertices of a
+        # face, let's call it N, then assigns next N vertices to this face. The process is repeated for every face.
 
         face_connects.append(verts[0])  # Append vertices of face.
         face_connects.append(verts[1])
@@ -216,8 +214,7 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
         anim_start_frame = keyframe_list.pop()  # Pop one time from the keyframe times list
         set_scale_keys(target=current_segment_name, keyframes=[[0.001, str(anim_start_frame) + 'sec'],
                                                                [1.2, str(anim_start_frame + keyframe_interval) + 'sec'],
-                                                               [1, str(anim_start_frame + 2*keyframe_interval) + 'sec']
-                                                               ])
+                                                               [1, str(anim_start_frame + 2*keyframe_interval) + 'sec']])
 
     cmds.delete(source_segment) # Delete the source object, instance will not be removed
     for current_segment_name in segments_tab:
@@ -1014,7 +1011,7 @@ def create_and_assign_materials():
     cmds.rename(water_mat, 'water_material')
 
 
-    for obj in cmds.ls(geometry=True, ) # Assign materials to objects
+    for obj in cmds.ls(geometry=True, ): # Assign materials to objects
         if "dome_light" in obj:
             cmds.sets(obj, e=True, forceElement=light_dome_sg)
         if "LOCK" in obj:
@@ -1090,7 +1087,7 @@ class DataTable:
 
         path = QtGui.QFileDialog.getExistingDirectory(None, 'Wybierz folder do zapisu pliku wyniki.txt',
                                                       'D:/Dane/Projekty/licencjat/')
-        with open(path + '/wyniki_Mays.txt', 'w') as file_:
+        with open(path + '/wyniki_Maya.txt', 'w') as file_:
             for score in scores:
                 file_.write(score + '\n')
 
