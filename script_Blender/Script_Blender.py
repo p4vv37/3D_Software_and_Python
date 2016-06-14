@@ -44,7 +44,9 @@ bl_info = {
     "category": ""}
 
 import bpy
+import bmesh
 from bpy_extras.io_utils import ExportHelper
+from bpy_extras import object_utils
 
 import os
 import time
@@ -73,13 +75,11 @@ def set_scale_keys(target, keyframes):
     :param obj:  String - Name of an object which scale will be animated
     :param keyframes: Python list - Keyframes that will be created: [[int time, float scale (1 = 100%),] ...]
     """
-    return(0)
+
     for keyframe in keyframes:  # For every keyframe from the list of keyframes scale object at proper time
         scale_value = float(keyframe[0])
-        cmds.setKeyframe(target, attribute='scaleX', v=scale_value, time=keyframe[1], itt="fast", ott="fast")
-        cmds.setKeyframe(target, attribute='scaleY', v=scale_value, time=keyframe[1], itt="fast", ott="fast")
-        cmds.setKeyframe(target, attribute='scaleZ', v=scale_value, time=keyframe[1], itt="fast", ott="fast")
-
+        bpy.data.objects[target].scale = (scale_value, scale_value, scale_value)
+        bpy.data.objects[target].keyframe_insert(data_path='scale', frame = keyframe[1])
 
 def leafs_rotations(number_of_leafs):
     """
@@ -90,7 +90,6 @@ def leafs_rotations(number_of_leafs):
     :param num: int - Number of leafs
     :return: Python list - List of angles of leafs around the palm tree
     """
-    return(0)
 
     x = -180  # Leafs are placed around the trunk, so the range is 2*pi (360 deg). x = 0, y = 2*pi would also be ok.
     y = 180
@@ -105,22 +104,20 @@ def leafs_rotations(number_of_leafs):
     return angles
 
 
-def set_position_keys(target, keyframes):
+    def set_position_keys(target, keyframes):
     """
     Function animates the position of given object by creating the given keyframes.
 
     :param obj:  String - Name of an object which scale will be animated
     :param keyframes: Python list - Keyframes that will be created: [[int time, [float x, float y, float z]], ...]
     """
-    return(0)
 
     for keyframe in keyframes:  # For every keyframe from the list of keyframes scale object at proper time
-        cmds.setKeyframe(target, attribute='translateX', v=keyframe[0][0], time=keyframe[1], itt="fast", ott="fast")
-        cmds.setKeyframe(target, attribute='translateY', v=keyframe[0][1], time=keyframe[1], itt="fast", ott="fast")
-        cmds.setKeyframe(target, attribute='translateZ', v=keyframe[0][2], time=keyframe[1], itt="fast", ott="fast")
+        bpy.data.objects["cloud"].location = keyframe[0]
+        bpy.data.objects[target].keyframe_insert(data_path='location', frame = keyframe[1])
+    return(0)
 
-
-def create_object(verts_pos, face_verts):
+def create_object(verts_pos, face_verts, name):
 
     """
     Function creates an object with mesh given by vertice and face data.
@@ -128,39 +125,16 @@ def create_object(verts_pos, face_verts):
     :type face_verts: Python list
     :type verts_pos: Python list
     """
-    return(0)
-
-    shark_mesh = om.MObject()
-    points = om.MFloatPointArray() # An array that is storing positions od vertices. Do not include id of vertices
-
-    for vert in verts_pos:  # add every point to Maya float points array
-        p = om.MFloatPoint(vert[0], vert[2], -vert[1])
-        points.append(p)
-
-    face_connects = om.MIntArray()  # an array for vertice numbers per face.
-    face_counts = om.MIntArray()  # an array for total number of vertices per face
-    for verts in face_verts:
-        # In Maya mesh is created on a base of two arrays: list of vertice numbers and list of numbers of vertices
-        # of faces. Vertice numbers from the first list are not grouped by faces, this is just a one dimmension array.
-        # Based on this list only it would be impossible to recreate mesh, becouse number of vertices in faces may vary
-        # (in this example every face have 3 vertices, but this is not obligatory).
-        #  The second array stores the number of vertices of faces. From this list Mata gets a number of vertices of a
-        # face, let's call it N, then assigns next N vertices to this face. The process is repeated for every face.
-
-        face_connects.append(verts[0])  # Append vertices of face.
-        face_connects.append(verts[1])
-        face_connects.append(verts[2])
-        face_counts.append(len(verts))  # append the number of vertices for this face
-    mesh_fs = om.MFnMesh()
-    mesh_fs.create(points, face_counts, face_connects, parent=shark_mesh)
-    mesh_fs.updateSurface()
-    node_name = mesh_fs.name()
-    cmds.polySoftEdge(node_name, a=30, ch=1) # Automatically soften the edges of the mesh
-
-    # assign new mesh to default shading group
-    cmds.sets(node_name, e=True, fe='initialShadingGroup')
-    return cmds.listRelatives(node_name, fullPath=True, parent=True) # node name stores a name of Shape node.
-    #  Most functions need a Transform node. Ths line returns it.
+    mesh = bpy.data.meshes.new(name)
+    bm = bmesh.new()
+    for v_co in verts_pos:
+            bm.verts.new(v_co)
+    bm.verts.ensure_lookup_table()
+    for f_idx in face_verts:
+        bm.faces.new([bm.verts[i] for i in f_idx])
+    bm.to_mesh(mesh)
+    mesh.update()
+    object_utils.object_data_add(bpy.context, mesh)
 
 
 def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim_end):
@@ -363,13 +337,10 @@ def import_and_animate_basic_meshes():
     """
 
     path = bpy.context.scene.content_path
-    #bpy.ops.import_scene.obj(path + '\water.obj')
-    return(0)
-
-    cmds.file(path + '\water.obj', i=True)  # Import an obj file
+    bpy.ops.import_scene.obj(filepath=path + '\water.obj')
     set_scale_keys(target="water", keyframes=[[0.001, 1], [1, 9]])  # Set the animation keys
 
-    cmds.file(path + '\land.obj', i=True)
+    bpy.ops.import_scene.obj(filepath=path + '\land.obj')
     set_scale_keys(target="land", keyframes=[[0.001, 8], [1, 11]])
 
 
@@ -379,7 +350,6 @@ def create_shark_and_cloud():
     Two functions are used: one is easier to read an one is more useful.
     Similar functions can be used in importer plugin.
     """
-    return(0)
 
     shark_verts_pos = [[-2.42281, -0.814631, 1.55561], [0.0166863, -0.854455, 1.91858], [-2.42281, -0.482041, 1.55561],
                        [0.0166863, -0.44221, 1.91858], [-2.57592, -0.814631, 3.45857], [-1.41455, -0.810425, 3.54678],
@@ -390,10 +360,9 @@ def create_shark_and_cloud():
                         [3, 11, 10], [1, 8, 11], [8, 9, 10], [4, 5, 7], [0, 1, 5], [1, 3, 7], [3, 2, 6], [2, 0, 4],
                         [0, 2, 9], [2, 3, 10], [3, 1, 11], [1, 0, 8]]
 
-    shark_node_name = create_object(shark_verts_pos, shark_face_verts)
-    cmds.rename(shark_node_name, "shark")
+    create_object(shark_verts_pos, shark_face_verts, "shark")
     set_scale_keys(target="shark", keyframes=[[0.001, 9], [1, 15]])
-    cmds.move(-9.18464, -4, -54.9695, "shark", absolute=True)  # Set position
+    bpy.data.objects["shark"].location = (-9.18464, -54.9695, -4)
 
     cloud_verts_pos = [[-4.59048, -11.5324, -2.85738], [4.19166, -11.3976, -1.66769], [-2.72098, 4.70308, -0.947684],
                        [5.35751, 5.31851, -1.84713], [-2.55545, -10.6202, 1.76613], [6.33762, -11.4932, 3.83193],
@@ -630,10 +599,9 @@ def create_shark_and_cloud():
                         [48, 325, 202], [196, 299, 326], [196, 326, 243], [327, 293, 224], [327, 224, 256],
                         [253, 328, 247], [289, 328, 253], [329, 258, 127], [258, 329, 292]]
 
-    cloud_node_name = create_object(cloud_verts_pos, cloud_face_verts)
-    cmds.rename(cloud_node_name, "cloud")
+    create_object(cloud_verts_pos, cloud_face_verts, "cloud")
     set_scale_keys(target="cloud", keyframes=[[0.001, 62], [1.1, 67], [1, 69]])
-    cmds.move(-9.18464, 31, 39.500, "cloud", absolute=True)
+    bpy.data.objects["cloud"].location = (-9.18464, 39.500, 31)
     set_position_keys(target="cloud", keyframes=[[[2.409, 31.7, 39.500], 69, [5, 5]],
                                                  [[2.409, 33, 39.500], 97, [5, 5]],
                                                  [[2.409, 32.3, 39.500], 125, [5, 5]],
@@ -1119,12 +1087,14 @@ class ResetOperator(bpy.types.Operator):
     bl_label = "Reset the scene"
 
     def execute(self, context):
-        for obj in bpy.data.objects:
-            obj.select = True
+        bpy.ops.wm.read_homefile()
         bpy.context.scene.next_step = 0
         bpy.ops.object.delete()
         bpy.context.scene.actions_records.clear()
         bpy.app.handlers.scene_update_pre.append(collhack)
+        for obj in bpy.data.objects:
+            obj.select = True
+        bpy.ops.object.delete(use_global=False)
         return {'FINISHED'}
 
 
