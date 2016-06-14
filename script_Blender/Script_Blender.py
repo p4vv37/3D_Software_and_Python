@@ -300,11 +300,12 @@ def prepare_scene():
 
     :param path: string - The directory with necessary files
     """
+    #bpy.ops.import_scene.obj()
+    #bpy.ops.script.execute_preset(filepath="C:\\Program Files\\Blender Foundation\\Blender\\2.77\\scripts\\presets\\framerate\\25.py", menu_idname="RENDER_MT_framerate_presets")
+    bpy.context.scene.frame_end = 260
+    bpy.context.scene.frame_start = 0
+
     return(0)
-
-    cmds.playbackOptions(min=0, max=260)  # Set the animation range
-
-    cmds.autoKeyframe(state=False)  # Make sure, that the AutoKey button is disabled
 
     plugins_dirs = mel.getenv("MAYA_PLUG_IN_PATH") # Mental Ray plugin is necessaryfor this script to run propperly.
     # Next lines check if the plugin is avaible and installs it or displays an allert window.
@@ -360,6 +361,9 @@ def import_and_animate_basic_meshes():
 
     :param path: string - The directory with necessary files
     """
+
+    path = bpy.context.scene.content_path
+    #bpy.ops.import_scene.obj(path + '\water.obj')
     return(0)
 
     cmds.file(path + '\water.obj', i=True)  # Import an obj file
@@ -1284,7 +1288,7 @@ if __name__ == "__main__":
     for obj in bpy.data.objects:
         obj.select = True
     bpy.ops.object.delete()
-    bpy.ops.next_step = 0
+    bpy.context.scene.next_step = 0
     bpy.context.scene.actions_records.clear()
     my_item = bpy.context.scene.actions_records.add()
     my_item.name = "Zadanie"
