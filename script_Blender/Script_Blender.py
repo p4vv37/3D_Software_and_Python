@@ -48,6 +48,7 @@ import bmesh
 from bpy_extras.io_utils import ExportHelper
 from bpy_extras import object_utils
 
+import mathutils
 import os
 import time
 import math
@@ -197,24 +198,15 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
         instance.dupli_group = group
         bpy.context.scene.objects.link(instance)
         instance.scale = (1.0 - ((i+1) / (segs_num * 4.0)), 1.0 - ((i+1) / (segs_num * 4.0)), 1)
-        instance.location[2] =((i+1)*diameter)
         anim_start_frame = keyframe_list.pop()
         set_scale_keys(target=current_segment_name, keyframes=[[0.001, anim_start_frame],
                                                                        [1.2, anim_start_frame + keyframe_interval],
                                                                        [1, anim_start_frame + 2*keyframe_interval]])
-        instance.rotation_euler[1] = -0.02*bending*(float(i+1)/segs_num)
-        print(-0.02*bending*(float(i+1)/segs_num))
+
+        # assemble the new matrix
 
         segments_tab.append(instance)
     group1 = bpy.data.groups.new("BendGroup")
-    for el in segments_tab:
-        group1.objects.link(el)
-
-    # The nodes at the top of the tree should be smaller then those at the bottom:
-
-    #bpy.ops.object.delete() # Delete the source object, instance will not be removed
-    return(0)
-    # The leaf will be created from saved vertex data in a similar way to cloud.
 
     verts_list = [[0.0874634, 0.283682, -0.150049], [-9.33334, 3.45312, -5.19915], [-0.0979366, -0.242619, -0.151449],
                   [0.0756626, 0.288981, 0.00435066], [-0.110037, -0.237219, 0.00305176],
@@ -244,13 +236,62 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
                   [19, 31, 34], [19, 25, 29], [22, 34, 30], [35, 23, 20], [21, 24, 30], [20, 21, 33], [19, 22, 28],
                   [19, 23, 35], [22, 24, 36], [17, 14, 26], [27, 15, 12], [26, 14, 15], [31, 7, 10], [25, 13, 17],
                   [34, 10, 18], [13, 16, 38], [12, 39, 38]]
+    create_object(verts_list, faces_list, 'root_leaf')
+    anim_start_frame = keyframe_list.pop()
+    last_node = segments_tab[-1]
 
+    bpy.context.scene.objects['root_leaf'].location = mathutils.Vector((0,0,0))
+    bpy.context.scene.objects['root_leaf'].parent = last_node
+
+    for rot_z in leafs_rotations(number_of_leafs=leafs_num):
+        print(i)
+        current_leaf_name = "leaf_" + str(id_num) + '_' + str(i)
+        instance = bpy.data.objects.new(current_leaf_name, None)
+        instance.dupli_type = 'GROUP'
+        instance.dupli_group = group
+        bpy.context.scene.objects.link(instance)
+        #instance.location[2] = segs_num*diameter
+        instance.location = mathutils.Vector((0,0,0))
+        instance.scale = (0.9, 0.9, 0.9)
+        set_scale_keys(target=current_leaf_name,
+                       keyframes=[[0.001, anim_start_frame],
+                                  [1, anim_start_frame + keyframe_interval]])
+        instance.rotation_euler = (random.uniform(-math.pi / 15, math.pi / 15), rot_z, random.uniform(-math.pi / 8, math.pi / 10))
+
+
+    i = 0
+    pos = (0,0,0)
+    bpy.context.scene.update()
+    for el in segments_tab:
+        i+=1
+        rotation = math.radians(bending*(float(i)/segs_num))
+        pos = (pos[0] + math.sin(rotation)*diameter,
+            0,
+            pos[2] + math.cos(rotation)*diameter)
+        el.location = mathutils.Vector(pos)
+        el.rotation_euler[1] = rotation
+        group1.objects.link(el)
+    return(0)
     leaf_source_name = create_object(verts_list, faces_list) # Create the leaf object that will be instanced
     cmds.rename(leaf_source_name, "leaf")
 
     anim_start_frame = keyframe_list.pop()
 
     last_node = segments_tab[-1] # Get the last element of the palm tree. It will be a parent of leafs.
+    for rot_z in leafs_rotations(number_of_leafs=leafs_num):  # Leafs should be distributed around the pine.
+        current_leaf_name = "leaf_" + str(id_num) + '_' + str(i)
+        cmds.instance("leaf", n=current_leaf_name)
+        cmds.move(diameter*4, current_leaf_name, moveY=True, relative=True)
+
+        cmds.rotate(random.uniform(-math.pi / 15, math.pi / 15), rot_z, random.uniform(-math.pi / 8, math.pi / 10),
+                    current_leaf_name)
+        set_scale_keys(target=current_leaf_name,
+                       keyframes=[[0.001, anim_start_frame],
+                                  [1, anim_start_frame + keyframe_interval]])
+        cmds.parent(current_leaf_name, last_node, relative = True)
+        cmds.scale(0.9, 0.9, 0.9, current_leaf_name)
+        i += 1
+
     for rot_z in leafs_rotations(number_of_leafs=leafs_num):  # Leafs should be distributed around the pine.
         current_leaf_name = "leaf_" + str(id_num) + '_' + str(i)
         cmds.instance("leaf", n=current_leaf_name)
