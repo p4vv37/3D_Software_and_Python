@@ -53,6 +53,21 @@ import time
 import math
 import random
 import glob
+from random import uniform
+
+def random_scale_action():
+    action = bpy.data.actions.new("RandomScaleAction")
+    data_path = "scale"
+    # (frame, value) for keyframe point
+    for axis in [0, 1, 2]:
+        # new fcurve
+        fc = action.fcurves.new(data_path, index=axis)
+        # add a new keyframe point
+        fc.keyframe_points.add(count=2)
+        for kfp in fc.keyframe_points:
+            kfp.co = (uniform(1,100), uniform(0, 1))
+
+    return action
 
 def frange(start, end, jump):
     """
@@ -104,7 +119,7 @@ def leafs_rotations(number_of_leafs):
     return angles
 
 
-    def set_position_keys(target, keyframes):
+def set_position_keys(target, keyframes):
     """
     Function animates the position of given object by creating the given keyframes.
 
@@ -150,13 +165,11 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
     :param anim_start: int - Starting frame of the tree animation
     :param anim_end: int - Ending frame of the tree animation
     """
-    return(0)
+    r1 = diameter / 2
+    r2 = r1 * 1.3
+    h = diameter  # Height of each segment
 
     keyframe_interval = (anim_end - anim_start) / (segs_num + 1.0)  # interval of scale keframes of the pine segments
-
-    anim_start /= 25.0  # Convert frames to the time
-    anim_end /= 25.0  # Need to convert now, because the number of segments is probably
-    keyframe_interval /= 25.0  # grater then the number of frames between the start and the end o the animation of tree
 
     # list of times of keyframes for the pine
     # and leafs. Equal time intervals.
@@ -164,45 +177,43 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
 
     keyframe_list.reverse()  # Because the pop() will be used and the first frame should be the smallest number
 
-    source_segment = 'segment_orginal' # Create an object that will be instanced
-    cmds.polyCone(r=diameter/2, h=-diameter * 8, n=source_segment, subdivisionsY=5) # Create a cone. Cone will have a
-    # sharp tip, that will be removed later
-    cmds.polyDelFacet(source_segment + '.f[20:79]', source_segment + '.f[81:100]') # delete polgons of sharp end of cone
-    cmds.polyNormal(name=source_segment, normalMode=0) # Reverse face normals.
-    #  Normals are reversed, because "h" parameter is a negative number.
-    bbox = cmds.exactWorldBoundingBox(source_segment) # The pivot is placed currently at the end of sharp tip of
-    # the cone that had been removed. Pivot will be placed at the bottom of the objects now with a use of
-    # its bounding box parameters.
-    bottom_of_mesh = [(bbox[0] + bbox[3]) / 2, bbox[1], (bbox[2] + bbox[5]) / 2]
-    cmds.xform(source_segment, piv=bottom_of_mesh, ws=True)
-
+    bpy.ops.mesh.primitive_cone_add(radius1=r1, radius2=r2, depth=h)
+    bpy.context.scene.objects.active.location = (0, 0, 0)
+    bpy.context.scene.update()
+    bpy.context.scene.objects.active.name = "root_" + str(id_num)
+    bpy.context.scene.update()
     segments_tab = []  # A list of all the segments of the tree.
-    for i in range(segs_num):
-        cmds.refresh(f=True)
-        # Create segments of pine of the palm tree
+    group = bpy.data.groups.new("CubeGroup")
+    group.objects.link(bpy.context.scene.objects.active)
+    bpy.context.scene.update()
+    anim_start_frame = keyframe_list.pop()
+    set_scale_keys(target="root_" + str(id_num), keyframes=[[0.001, anim_start_frame],
+                                                                   [1.2, anim_start_frame + keyframe_interval],
+                                                                   [1, anim_start_frame + 2*keyframe_interval]])
+    for i in range(segs_num-1):
+        current_segment_name = 'Palm_element_' + str(id_num) + '_' + str(i+1)
+        instance = bpy.data.objects.new(current_segment_name, None)
+        instance.dupli_type = 'GROUP'
+        instance.dupli_group = group
+        bpy.context.scene.objects.link(instance)
+        instance.scale = (1.0 - ((i+1) / (segs_num * 4.0)), 1.0 - ((i+1) / (segs_num * 4.0)), 1)
+        instance.location[2] =((i+1)*diameter)
+        anim_start_frame = keyframe_list.pop()
+        set_scale_keys(target=current_segment_name, keyframes=[[0.001, anim_start_frame],
+                                                                       [1.2, anim_start_frame + keyframe_interval],
+                                                                       [1, anim_start_frame + 2*keyframe_interval]])
+        instance.rotation_euler[1] = -0.02*bending*(float(i+1)/segs_num)
+        print(-0.02*bending*(float(i+1)/segs_num))
 
-        current_segment_name = 'Palm_element_' + str(id_num) + '_' + str(i)
-        cmds.instance('segment_orginal', n=current_segment_name)  # Create an instance with segment geometry
-        cmds.move(diameter * i, current_segment_name, moveY=True, absolute=True)
-        # Every node should be diameter higher then last one
+        segments_tab.append(instance)
+    group1 = bpy.data.groups.new("BendGroup")
+    for el in segments_tab:
+        group1.objects.link(el)
 
-        # The nodes at the top of the tree should be smaller then those at the bottom:
-        cmds.scale(1.0 - (i / (segs_num * 4.0)), 1.0 - (i / (segs_num * 4.0)), 1, current_segment_name)
-        segments_tab.append(current_segment_name)  # Append to the nodes table
-        anim_start_frame = keyframe_list.pop()  # Pop one time from the keyframe times list
-        set_scale_keys(target=current_segment_name, keyframes=[[0.001, str(anim_start_frame) + 'sec'],
-                                                               [1.2, str(anim_start_frame + keyframe_interval) + 'sec'],
-                                                               [1, str(anim_start_frame + 2*keyframe_interval) + 'sec']])
+    # The nodes at the top of the tree should be smaller then those at the bottom:
 
-    cmds.delete(source_segment) # Delete the source object, instance will not be removed
-    for current_segment_name in segments_tab:
-        # Parent every segment to the root node. If there is no root node, then this segment will be a root.
-        try:
-            cmds.parent(current_segment_name, root,
-                        relative=True)
-        except:  # If the function failed then this is a first node of the tree and will not have any parent
-            root = current_segment_name
-
+    #bpy.ops.object.delete() # Delete the source object, instance will not be removed
+    return(0)
     # The leaf will be created from saved vertex data in a similar way to cloud.
 
     verts_list = [[0.0874634, 0.283682, -0.150049], [-9.33334, 3.45312, -5.19915], [-0.0979366, -0.242619, -0.151449],
@@ -248,8 +259,8 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
         cmds.rotate(random.uniform(-math.pi / 15, math.pi / 15), rot_z, random.uniform(-math.pi / 8, math.pi / 10),
                     current_leaf_name)
         set_scale_keys(target=current_leaf_name,
-                       keyframes=[[0.001, str(anim_start_frame)+"sec"],
-                                  [1, str(anim_start_frame + keyframe_interval)+"sec"]])
+                       keyframes=[[0.001, anim_start_frame],
+                                  [1, anim_start_frame + keyframe_interval]])
         cmds.parent(current_leaf_name, last_node, relative = True)
         cmds.scale(0.9, 0.9, 0.9, current_leaf_name)
         i += 1
@@ -602,12 +613,12 @@ def create_shark_and_cloud():
     create_object(cloud_verts_pos, cloud_face_verts, "cloud")
     set_scale_keys(target="cloud", keyframes=[[0.001, 62], [1.1, 67], [1, 69]])
     bpy.data.objects["cloud"].location = (-9.18464, 39.500, 31)
-    set_position_keys(target="cloud", keyframes=[[[2.409, 31.7, 39.500], 69, [5, 5]],
-                                                 [[2.409, 33, 39.500], 97, [5, 5]],
-                                                 [[2.409, 32.3, 39.500], 125, [5, 5]],
-                                                 [[2.409, 31.5, 39.500], 173, [5, 5]],
-                                                 [[2.409, 32.3, 39.500], 220, [5, 5]],
-                                                 [[2.409, 31.4, 39.500], 240, [5, 5]]])
+    set_position_keys(target="cloud", keyframes=[[[2.409, -39.500, 31.7], 69, [5, 5]],
+                                                   [[2.409, -39.500, 33], 97, [5, 5]],
+                                                   [[2.409, -39.500, 32.3], 125, [5, 5]],
+                                                   [[2.409, -39.500, 31.5], 173, [5, 5]],
+                                                   [[2.409, -39.500, 32.3], 220, [5, 5]],
+                                                   [[2.409, -39.500, 31.4], 240, [5, 5]]])
 
 
 def create_chest():
@@ -838,9 +849,10 @@ def create_and_animate_trees():
     Function uses the create_palm() support function to create and animate some palm trees.
     It was created to show how to create basic geometry objects, use instances and use modificators.
     """
-    return(0)
+    #return(0)
 
     palm1 = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
+    return(0)
     palm2 = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=34, id_num=2, anim_start=40, anim_end=45)
     palm3 = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
     palm4 = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
@@ -1094,7 +1106,7 @@ class ResetOperator(bpy.types.Operator):
         bpy.app.handlers.scene_update_pre.append(collhack)
         for obj in bpy.data.objects:
             obj.select = True
-        bpy.ops.object.delete(use_global=False)
+        bpy.ops.object.delete()
         return {'FINISHED'}
 
 
