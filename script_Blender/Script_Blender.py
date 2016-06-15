@@ -56,19 +56,6 @@ import random
 import glob
 from random import uniform
 
-def random_scale_action():
-    action = bpy.data.actions.new("RandomScaleAction")
-    data_path = "scale"
-    # (frame, value) for keyframe point
-    for axis in [0, 1, 2]:
-        # new fcurve
-        fc = action.fcurves.new(data_path, index=axis)
-        # add a new keyframe point
-        fc.keyframe_points.add(count=2)
-        for kfp in fc.keyframe_points:
-            kfp.co = (uniform(1,100), uniform(0, 1))
-
-    return action
 
 def frange(start, end, jump):
     """
@@ -180,33 +167,30 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
 
     bpy.ops.mesh.primitive_cone_add(radius1=r1, radius2=r2, depth=h)
     bpy.context.scene.objects.active.location = (0, 0, 0)
-    bpy.context.scene.update()
     bpy.context.scene.objects.active.name = "root_" + str(id_num)
-    bpy.context.scene.update()
     segments_tab = []  # A list of all the segments of the tree.
-    group = bpy.data.groups.new("CubeGroup")
-    group.objects.link(bpy.context.scene.objects.active)
-    bpy.context.scene.update()
     anim_start_frame = keyframe_list.pop()
     set_scale_keys(target="root_" + str(id_num), keyframes=[[0.001, anim_start_frame],
                                                                    [1.2, anim_start_frame + keyframe_interval],
                                                                    [1, anim_start_frame + 2*keyframe_interval]])
+    #translation = mathutils.Vector((0, 0, diameter))
+    segments_tab.append(bpy.context.scene.objects.active)
     for i in range(segs_num-1):
-        current_segment_name = 'Palm_element_' + str(id_num) + '_' + str(i+1)
-        instance = bpy.data.objects.new(current_segment_name, None)
-        instance.dupli_type = 'GROUP'
-        instance.dupli_group = group
-        bpy.context.scene.objects.link(instance)
-        instance.scale = (1.0 - ((i+1) / (segs_num * 4.0)), 1.0 - ((i+1) / (segs_num * 4.0)), 1)
+        current_segment_name = 'Palm_element_' + str(id_num) + '_' + str(i)
+        bpy.ops.object.duplicate()
+        #bpy.ops.object.duplicate_move( OBJECT_OT_duplicate=None, TRANSFORM_OT_translate={"value":translation})
+        segment = bpy.context.scene.objects.active
+        segment.name = current_segment_name
+        segment.location = mathutils.Vector((0,0,0))
+        segment.scale = (1.0 - ((i+1) / (segs_num * 4.0)), 1.0 - ((i+1) / (segs_num * 4.0)), 1)
         anim_start_frame = keyframe_list.pop()
         set_scale_keys(target=current_segment_name, keyframes=[[0.001, anim_start_frame],
                                                                        [1.2, anim_start_frame + keyframe_interval],
                                                                        [1, anim_start_frame + 2*keyframe_interval]])
 
         # assemble the new matrix
-
-        segments_tab.append(instance)
-    group1 = bpy.data.groups.new("BendGroup")
+        segment.parent = segments_tab[0]
+        segments_tab.append(segment)
 
     verts_list = [[0.0874634, 0.283682, -0.150049], [-9.33334, 3.45312, -5.19915], [-0.0979366, -0.242619, -0.151449],
                   [0.0756626, 0.288981, 0.00435066], [-0.110037, -0.237219, 0.00305176],
@@ -236,88 +220,47 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
                   [19, 31, 34], [19, 25, 29], [22, 34, 30], [35, 23, 20], [21, 24, 30], [20, 21, 33], [19, 22, 28],
                   [19, 23, 35], [22, 24, 36], [17, 14, 26], [27, 15, 12], [26, 14, 15], [31, 7, 10], [25, 13, 17],
                   [34, 10, 18], [13, 16, 38], [12, 39, 38]]
-    create_object(verts_list, faces_list, 'root_leaf')
+    i = 0
+    current_leaf_name = "leaf_" + str(id_num) + '_' + str(i)
+    i += 1
+
+    create_object(verts_list, faces_list, current_leaf_name)
+    bpy.context.scene.update()
     anim_start_frame = keyframe_list.pop()
     last_node = segments_tab[-1]
+    set_scale_keys(target=current_leaf_name,
+                   keyframes=[[0.001, anim_start_frame],
+                              [1, anim_start_frame + keyframe_interval]])
 
-    bpy.context.scene.objects['root_leaf'].location = mathutils.Vector((0,0,0))
-    bpy.context.scene.objects['root_leaf'].parent = last_node
-
+    bpy.context.scene.objects[current_leaf_name].location = mathutils.Vector((0,0,0))
+    bpy.context.scene.objects[current_leaf_name].parent = last_node
     for rot_z in leafs_rotations(number_of_leafs=leafs_num):
-        print(i)
         current_leaf_name = "leaf_" + str(id_num) + '_' + str(i)
-        instance = bpy.data.objects.new(current_leaf_name, None)
-        instance.dupli_type = 'GROUP'
-        instance.dupli_group = group
-        bpy.context.scene.objects.link(instance)
-        #instance.location[2] = segs_num*diameter
-        instance.location = mathutils.Vector((0,0,0))
-        instance.scale = (0.9, 0.9, 0.9)
-        set_scale_keys(target=current_leaf_name,
-                       keyframes=[[0.001, anim_start_frame],
-                                  [1, anim_start_frame + keyframe_interval]])
-        instance.rotation_euler = (random.uniform(-math.pi / 15, math.pi / 15), rot_z, random.uniform(-math.pi / 8, math.pi / 10))
+        bpy.context.scene.update()
+        bpy.ops.object.duplicate(linked=True)
+        leaf = bpy.context.scene.objects.active
+        bpy.context.scene.update()
+        leaf.name = current_leaf_name
+        leaf.location[2] = diameter
+        leaf.scale = (0.9, 0.9, 0.9)
+        leaf.rotation_euler = (random.uniform(-math.pi / 15, math.pi / 15),
+                               random.uniform(-math.pi / 8, math.pi / 10),
+                               rot_z)
+        i += 1
 
 
     i = 0
     pos = (0,0,0)
-    bpy.context.scene.update()
-    for el in segments_tab:
-        i+=1
+    for el in segments_tab[1:]:
         rotation = math.radians(bending*(float(i)/segs_num))
         pos = (pos[0] + math.sin(rotation)*diameter,
             0,
             pos[2] + math.cos(rotation)*diameter)
+        print(pos)
         el.location = mathutils.Vector(pos)
         el.rotation_euler[1] = rotation
-        group1.objects.link(el)
-    return(0)
-    leaf_source_name = create_object(verts_list, faces_list) # Create the leaf object that will be instanced
-    cmds.rename(leaf_source_name, "leaf")
-
-    anim_start_frame = keyframe_list.pop()
-
-    last_node = segments_tab[-1] # Get the last element of the palm tree. It will be a parent of leafs.
-    for rot_z in leafs_rotations(number_of_leafs=leafs_num):  # Leafs should be distributed around the pine.
-        current_leaf_name = "leaf_" + str(id_num) + '_' + str(i)
-        cmds.instance("leaf", n=current_leaf_name)
-        cmds.move(diameter*4, current_leaf_name, moveY=True, relative=True)
-
-        cmds.rotate(random.uniform(-math.pi / 15, math.pi / 15), rot_z, random.uniform(-math.pi / 8, math.pi / 10),
-                    current_leaf_name)
-        set_scale_keys(target=current_leaf_name,
-                       keyframes=[[0.001, anim_start_frame],
-                                  [1, anim_start_frame + keyframe_interval]])
-        cmds.parent(current_leaf_name, last_node, relative = True)
-        cmds.scale(0.9, 0.9, 0.9, current_leaf_name)
-        i += 1
-
-    for rot_z in leafs_rotations(number_of_leafs=leafs_num):  # Leafs should be distributed around the pine.
-        current_leaf_name = "leaf_" + str(id_num) + '_' + str(i)
-        cmds.instance("leaf", n=current_leaf_name)
-        cmds.move(diameter*4, current_leaf_name, moveY=True, relative=True)
-
-        cmds.rotate(random.uniform(-math.pi / 15, math.pi / 15), rot_z, random.uniform(-math.pi / 8, math.pi / 10),
-                    current_leaf_name)
-        set_scale_keys(target=current_leaf_name,
-                       keyframes=[[0.001, anim_start_frame],
-                                  [1, anim_start_frame + keyframe_interval]])
-        cmds.parent(current_leaf_name, last_node, relative = True)
-        cmds.scale(0.9, 0.9, 0.9, current_leaf_name)
-        i += 1
-
-    cmds.delete("leaf")
-
-    # Now the bend modifier will be applied to the source element of a palm tree. Other elements wil be also affected
-    # becouse they are parented to it.
-    cmds.nonLinear(root, type='bend', after = True, curvature=2*bending, lowBound=0)
-
-    # Rescale the handle of a modifier, it will look nicer
-    for name in cmds.ls():
-        if name.endswith('Handle'):
-            cmds.scale(60,60,60,name)
-
-    return root
+        i+=1
+    return(segments_tab[0])
 
 
 def prepare_scene():
@@ -892,42 +835,25 @@ def create_and_animate_trees():
     """
     #return(0)
 
-    palm1 = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
-    return(0)
-    palm2 = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=34, id_num=2, anim_start=40, anim_end=45)
-    palm3 = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
-    palm4 = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
+    palm = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
+    palm.rotation_euler = (-0.051025, 0.366333, 1.69211)  # Rotate the palm
+    palm.location = mathutils.Vector((-8.5, -18.1, -2.5))  # Position the palm
+    bpy.context.scene.update()
 
-    cmds.currentTime(55) # The removal of history had strange effect when it was applied before tree animation
-    # Next line is intended to avoid a bug. If the history has to be deleted with a cmds.delete function. If it
-    # would not be modified then the bend modifictor would have to be moved wit an object or it would affect an object
-    # in different ways then desired during a changes in its position. The problem is, that during that an evaluation
-    # of commands may take some time and the removing of history resulted in not deformed mesh or a partialy
-    # deformed mesh. This is why cmds.refresh() ommand was used.
-    cmds.refresh(f=True)
+    palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=34, id_num=2, anim_start=40, anim_end=45)
+    palm.rotation_euler = (0.0226778, 0.247746, 1.71606)  # Rotate the palm
+    palm.location = mathutils.Vector((28, -6.3, -2.5))  # Position the palm
+    bpy.context.scene.update()
 
-    cmds.delete(palm1, ch=True)
-    cmds.rotate(0.197, 105, 0.558, palm1, absolute=True)  # Rotate the palm
-    cmds.move(-8.5, -4.538, 18.1, palm1, absolute=True)  # Position the palm
-    cmds.parent(palm1, 'land', relative=True) # Rename it
+    palm = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
+    palm.rotation_euler = (0.0226778, 0.247746, -1.94985)  # Rotate the palm
+    palm.location = mathutils.Vector((34, -34, -2.5))  # Position the palm
+    bpy.context.scene.update()
 
-    cmds.delete(palm2, ch=True)
-    cmds.rotate(-16.935, 74.246, -23.907, palm2)
-    cmds.move(29.393, -3.990, 4.526, palm2)
-    cmds.parent(palm2, 'land', relative=True)
-
-    cmds.delete(palm3, ch=True)
-    cmds.move(24.498, -3.322, 36.057, palm3)
-    cmds.rotate(0.023, 0.248, -1.950, palm3)
-    cmds.parent(palm3, 'land', relative=True)
-
-    cmds.delete(palm4, ch=True)
-    cmds.move(4.353, -1.083, 22.68, palm4)
-    cmds.rotate(-150, -102.569, 872.616, palm4)
-    cmds.parent(palm4, 'land', relative=True)
-
-
-
+    palm = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
+    palm.rotation_euler = (0.0226778, 0.244222, -1.03672)  # Rotate the palm
+    palm.location = mathutils.Vector((14, -19, -2.5))  # Position the palm
+    bpy.context.scene.update()
 
 
 def change_hierarchy_and_animate():
