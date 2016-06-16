@@ -118,7 +118,7 @@ def set_position_keys(target, keyframes):
     for keyframe in keyframes:  # For every keyframe from the list of keyframes scale object at proper time
         bpy.data.objects["cloud"].location = keyframe[0]
         bpy.data.objects[target].keyframe_insert(data_path='location', frame = keyframe[1])
-    return(0)
+
 
 def create_object(verts_pos, face_verts, name):
 
@@ -274,46 +274,30 @@ def prepare_scene():
     bpy.context.scene.frame_end = 260
     bpy.context.scene.frame_start = 0
 
+    scn = bpy.context.scene
+
+    scn.render.resolution_x = 1024
+    scn.render.resolution_y = 768
+    scn.render.engine = 'CYCLES'
+    scn.world.use_nodes = True
+    wd = scn.world
+    nt = bpy.data.worlds[wd.name].node_tree
+    scn.render.resolution_x = 1024
+    scn.update()
+    nt.nodes['Background'].inputs[0].default_value = (1, 1, 1, 1)
+    nt.nodes['Background'].inputs[1].default_value = 0.2
+
+    bpy.ops.object.lamp_add(type='AREA',
+                            view_align=False,
+                            location=(-186.0, -134, 190),
+                            rotation=(0.79, 0, -0.96),
+                            layers=(True, False, False, False, False, False, False, False, False, False, False, False,
+                                    False, False, False, False, False, False, False, False))
+    bpy.context.scene.objects.active.data.size = 40
+    bpy.data.lamps[0].node_tree.nodes["Emission"].inputs[1].default_value = 1000000.0
+
+
     return(0)
-
-    plugins_dirs = mel.getenv("MAYA_PLUG_IN_PATH") # Mental Ray plugin is necessaryfor this script to run propperly.
-    # Next lines check if the plugin is avaible and installs it or displays an allert window.
-    # The plugins are accualy files placed in "MAYA_PLUG_IN_PATH" directories, so this script gets those paths
-    # and checks if there is a mental ray plugin file.
-
-    for plugins_dir in plugins_dirs.split(';'):
-        for filename in glob.glob(plugins_dir + '/*'): # For every filename in every directory of MAYA_PLUG_IN_PATH
-            if 'Mayatomr.mll' in filename: # if there is a mental ray plugin file then make sure it is loaded
-                if not cmds.pluginInfo('Mayatomr', query=True, loaded=True):
-                    cmds.loadPlugin('Mayatomr', quiet=True)
-                cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string') # Set the render engine to MR
-                # Next lines are a workaround for some bugs. The first one is that the render settings window has to be
-                # opened before setting attributes of the render. If it would not be, thhen Maya would display an error
-                # saying that such options do not exist.
-                # The second bug is that after running this scrpt the window was blank and it was impossible to set
-                # parameters. This is a common bug and it can be repaired by closing this window with
-                # cmds.deleteUI('unifiedRenderGlobalsWindow') command
-
-                cmds.RenderGlobalsWindow()
-                cmds.refresh(f=True)
-                cmds.deleteUI('unifiedRenderGlobalsWindow')
-                cmds.setAttr('miDefaultOptions.finalGather', 1)
-                cmds.setAttr('miDefaultOptions.miSamplesQualityR', 1)
-                cmds.setAttr('miDefaultOptions.lightImportanceSamplingQuality', 2)
-                cmds.setAttr('miDefaultOptions.finalGather', 1)
-                break
-        else:
-            continue
-        break
-    else:
-        print("Mental Ray plugin is not avaible. It can be found on the Autodesk website: ",
-              "https://knowledge.autodesk.com/support/maya/downloads/caas/downloads/content/",
-              "mental-ray-plugin-for-maya-2016.html")
-        alert_box =  QtGui.QMessageBox()
-        alert_box.setText("Mental Ray plugin is not avaible. It can be found on the Autodesk website: " +
-              "https://knowledge.autodesk.com/support/maya/downloads/caas/downloads/content/" +
-              "mental-ray-plugin-for-maya-2016.html")
-        alert_box.exec_()
 
     cam = cmds.camera(name="RenderCamera", focusDistance=35, position=[-224.354, 79.508, 3.569],
                       rotation=[-19.999,-90,0])  # create camera to set background (imageplane)
@@ -357,7 +341,7 @@ def create_shark_and_cloud():
 
     create_object(shark_verts_pos, shark_face_verts, "shark")
     set_scale_keys(target="shark", keyframes=[[0.001, 9], [1, 15]])
-    bpy.data.objects["shark"].location = (-9.18464, -54.9695, -4)
+    bpy.data.objects["shark"].location = (-9.18464, 54.9695, -4)
 
     cloud_verts_pos = [[-4.59048, -11.5324, -2.85738], [4.19166, -11.3976, -1.66769], [-2.72098, 4.70308, -0.947684],
                        [5.35751, 5.31851, -1.84713], [-2.55545, -10.6202, 1.76613], [6.33762, -11.4932, 3.83193],
@@ -833,27 +817,28 @@ def create_and_animate_trees():
     Function uses the create_palm() support function to create and animate some palm trees.
     It was created to show how to create basic geometry objects, use instances and use modificators.
     """
-    #return(0)
+
+    land = bpy.context.scene.objects['land']
 
     palm = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
-    palm.rotation_euler = (-0.051025, 0.366333, 1.69211)  # Rotate the palm
-    palm.location = mathutils.Vector((-8.5, -18.1, -2.5))  # Position the palm
-    bpy.context.scene.update()
+    palm.rotation_euler = (-0.051025, 1.53, 1.69211)  # Rotate the palm
+    palm.location = mathutils.Vector((-7.04, -1.05, 9.82))  # Position the palm
+    palm.parent = land
 
     palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=34, id_num=2, anim_start=40, anim_end=45)
     palm.rotation_euler = (0.0226778, 0.247746, 1.71606)  # Rotate the palm
     palm.location = mathutils.Vector((28, -6.3, -2.5))  # Position the palm
-    bpy.context.scene.update()
+    #palm.parent = land
 
     palm = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
     palm.rotation_euler = (0.0226778, 0.247746, -1.94985)  # Rotate the palm
     palm.location = mathutils.Vector((34, -34, -2.5))  # Position the palm
-    bpy.context.scene.update()
+    #palm.parent = land
 
     palm = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
     palm.rotation_euler = (0.0226778, 0.244222, -1.03672)  # Rotate the palm
     palm.location = mathutils.Vector((14, -19, -2.5))  # Position the palm
-    bpy.context.scene.update()
+    #palm.parent = land
 
 
 def change_hierarchy_and_animate():
@@ -861,6 +846,28 @@ def change_hierarchy_and_animate():
     Function modifies the hierarchy of scene and creates some final animations, that ware not possible to create earlier.
     It also creates cameras and lights.
     """
+    bpy.ops.object.empty_add(type='PLAIN_AXES')
+    bpy.context.scene.objects.active.name = 'top_parent'
+    top_parent = bpy.context.scene.objects['top_parent']
+
+    for obj in bpy.context.scene.objects:
+        if obj.parent == None:
+            if obj != top_parent:
+                obj.parent = top_parent
+
+    bpy.ops.object.camera_add()
+    bpy.context.scene.objects.active.name = 'RenderCamera'
+    camera = bpy.context.scene.objects.active
+    for obj in bpy.data.cameras:
+        obj.lens = 25
+        obj.clip_end = 500
+
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            area.spaces[0].region_3d.view_perspective = 'CAMERA'
+
+    camera.rotation_euler = (1.1775, 0.0, -1.64)
+    camera.location = mathutils.Vector((-149.0, 3.569, 52.082))
     return(0)
     cmds.lookThru( 'perspView', 'RenderCamera1') # Change the perspective viewport to the render camera.
 
