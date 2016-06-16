@@ -811,13 +811,13 @@ def create_shark_and_cloud():
     cloud = MaxPlus.Factory.CreateNode(tri)
     cloud.SetName("Cloud")
 
-    set_scale_keys(target=cloud, keyframes=[[0.001, 62], [1.1, 67], [1, 69]])
+    set_scale_keys(target=cloud, keyframes=[[0.001, 22], [1.1, 27], [1, 29]])
     cloud.Position = MaxPlus.Point3(2.409, -39.500, 31)
-    set_position_keys(target=cloud, keyframes=[[[2.409, -39.500, 31.7], 69, [5, 5]],
-                                                           [[2.409, -39.500, 33], 97, [5, 5]],
-                                                           [[2.409, -39.500, 32.3], 125, [5, 5]],
-                                                           [[2.409, -39.500, 31.5], 173, [5, 5]],
-                                                           [[2.409, -39.500, 32.3], 220, [5, 5]],
+    set_position_keys(target=cloud, keyframes=[[[2.409, -39.500, 31.7], 29, [5, 5]],
+                                                           [[2.409, -39.500, 33], 67, [5, 5]],
+                                                           [[2.409, -39.500, 32.3], 115, [5, 5]],
+                                                           [[2.409, -39.500, 31.5], 163, [5, 5]],
+                                                           [[2.409, -39.500, 32.3], 210, [5, 5]],
                                                            [[2.409, -39.500, 31.4], 240, [5, 5]]])
 
 
@@ -998,10 +998,10 @@ select $chest
 
     MaxPlus.Core.EvalMAXScript(recorded_macro)
     chest = MaxPlus.INode.GetINodeByName('chest')
-    set_scale_keys(target=chest, keyframes=[[0.001, 44], [0.1, 48]])
-    set_position_keys(target=chest, keyframes=[[[-3.892, 0.349, -1.533], 57, [1, 1]],
-                                                        [[-3.892, 0.349, 0], 61, [1, 1]],
-                                                        [[-3.892, 0.349, -1.533], 63, [1, 1]]])
+    set_scale_keys(target=chest, keyframes=[[0.001, 27], [0.1, 31]])
+    set_position_keys(target=chest, keyframes=[[[-3.892, 0.349, -1.533], 27, [1, 1]],
+                                                        [[-3.892, 0.349, 0], 31, [1, 1]],
+                                                        [[-3.892, 0.349, -1.533], 33, [1, 1]]])
     chest.Rotate(MaxPlus.Quat().SetEuler(-0.1256, -0.0296556, 0.673356))
     chest.Position = MaxPlus.Point3(-3.941, 0.061, -1.533)
     land = MaxPlus.INode.GetINodeByName('land')
@@ -1014,19 +1014,19 @@ def create_and_animate_trees():
     It was created to show how to create basic geometry objects, use instances and use modificators.
     """
 
-    palm = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
+    palm = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=16)
     palm.Rotate(MaxPlus.Quat().SetEuler(-0.051025, 0.366333, 1.69211))  # Rotate the palm
     palm.Position = MaxPlus.Point3(-8.5, -18.1, -2.5)  # Position the palm
 
-    palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=40, id_num=2, anim_start=40, anim_end=45)
+    palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=40, id_num=2, anim_start=23, anim_end=28)
     palm.Rotate(MaxPlus.Quat().SetEuler(0.0226778, 0.247746, 1.71606))
     palm.Position = MaxPlus.Point3(28, -6.3, -2.5)
 
-    palm = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
+    palm = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=15, anim_end=20)
     palm.Rotate(MaxPlus.Quat().SetEuler(0.0226778, 0.247746, -1.94985))
     palm.Position = MaxPlus.Point3(34, -34, -2.5)
 
-    palm = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
+    palm = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=20, anim_end=25)
     palm.Rotate(MaxPlus.Quat().SetEuler(0.0226778, 0.244222, -1.03672))
     palm.Position = MaxPlus.Point3(14, -19, -2.5)
 
