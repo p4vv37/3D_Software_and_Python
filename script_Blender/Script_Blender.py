@@ -595,221 +595,35 @@ def create_chest():
     This function shows how to use macros. Macros are actions recorded with a Maya and they can be
     evaluated as Mel commands. Macros are a very simple way of creating simple scripts.
     """
-    return(0)
 
-    recorded_macro = '''
+    path = bpy.context.scene.content_path
 
-CreatePolygonCube;
-polyCube -w 1 -h 1 -d 1 -sx 1 -sy 1 -sz 1 -ax 0 1 0 -cuv 4 -ch 1;
-// Result: pCube1 polyCube1 //
-setAttr "polyCube1.width" 35;
-setAttr "polyCube1.height" 25;
-setAttr "polyCube1.depth" 60;
-setAttr "polyCube1.width" 60;
-setAttr "polyCube1.depth" 35;
-move -r 0 12.426176 0 ;
-move -r 0 -16.909006 0 ;
-// Undo: move -r 0 -16.909006 0  //
-select -r pCube1 ;
-select -r pCube1 ;
-move -r 0 12.198762 0 ;
-select -r pCube1.f[0:2] pCube1.f[4:5] ;
-select -d pCube1.f[0] pCube1.f[2:5] ;
-hilite pCube1.f[1] ;
-selectMode -component ;
-select -r pCube1.f[1] ;
-polyExtrudeFacet -constructionHistory 1 -keepFacesTogether 1 -pvx 0 -pvy 24.69876187 -pvz 0 -divisions 1 -twist 0 -taper 1 -off 0.31 -thickness 0 -smoothingAngle 30 pCube1.f[1];
-// Result: polyExtrudeFace1 //
-move -r 0 3.039953 0 ;
-select -r pCube1.f[1] ;
-polyExtrudeFacet -constructionHistory 1 -keepFacesTogether 1 -pvx 0 -pvy 27.7387132 -pvz 0 -divisions 1 -twist 0 -taper 1 -off 0.31 -thickness 0 -smoothingAngle 30 pCube1.f[1];
-// Result: polyExtrudeFace2 //
-move -r 0 3.554939 0 ;
-scale -r -p 0cm 31.293651cm 0cm 1 1 0.919502 ;
-select -r pCube1.f[1] ;
-polyExtrudeFacet -constructionHistory 1 -keepFacesTogether 1 -pvx 0 -pvy 31.29365056 -pvz 0 -divisions 1 -twist 0 -taper 1 -off 0.31 -thickness 0 -smoothingAngle 30 pCube1.f[1];
-// Result: polyExtrudeFace3 //
-move -r 0 2.96881 0 ;
-scale -r -p 0cm 34.262464cm 0cm 1 1 0.820697 ;
-select -r pCube1.f[1] ;
-polyExtrudeFacet -constructionHistory 1 -keepFacesTogether 1 -pvx 0 -pvy 34.2624635 -pvz 0 -divisions 1 -twist 0 -taper 1 -off 0.31 -thickness 0 -smoothingAngle 30 pCube1.f[1];
-// Result: polyExtrudeFace4 //
-move -r 0 1.7812 0 ;
-scale -r -p 0cm 36.043664cm 0cm 1 1 0.779804 ;
-scale -r -p 0cm 36.043664cm 0cm 1 1 0.976608 ;
-select -r pCube1.f[1] ;
-polyExtrudeFacet -constructionHistory 1 -keepFacesTogether 1 -pvx 0 -pvy 36.04366391 -pvz 0 -divisions 1 -twist 0 -taper 1 -off 0.31 -thickness 0 -smoothingAngle 30 pCube1.f[1];
-// Result: polyExtrudeFace5 //
-move -r 0 2.138578 0 ;
-scale -r -p 0cm 38.182242cm 0cm 1 1 0.333583 ;
-select -r pCube1.f[1] ;
-//
-//
-//
-polyCube -w 1 -h 1 -d 1 -sx 1 -sy 1 -sz 1 -ax 0 1 0 -cuv 4 -ch 1;
-// Result: pCube1 polyCube1 //
-hilite pCube1.f[1] ;
-hilite -r pCube1 ;
-select -r pCube1.e[4:5] pCube1.e[8:9] ;
-select -r pCube1.e[4:5] pCube1.e[8:9] ;
-polySplitRing -ch on -splitType 2 -divisions 2 -useEqualMultiplier 1 -smoothingAngle 30 -fixQuads 1 ;
-// Result: polySplitRing1 //
-select -r pCube1.e[0:3] pCube1.e[14] pCube1.e[18] pCube1.e[22] pCube1.e[26] pCube1.e[30] pCube1.e[34] pCube1.e[38] pCube1.e[42] pCube1.e[46] pCube1.e[50] pCube1.e[56] pCube1.e[59] pCube1.e[64] pCube1.e[67] ;
-select -r pCube1.e[0:3] pCube1.e[14] pCube1.e[18] pCube1.e[22] pCube1.e[26] pCube1.e[30] pCube1.e[34] pCube1.e[38] pCube1.e[42] pCube1.e[46] pCube1.e[50] pCube1.e[56] pCube1.e[59] pCube1.e[64] pCube1.e[67] ;
-polySplitRing -ch on -splitType 2 -divisions 2 -useEqualMultiplier 1 -smoothingAngle 30 -fixQuads 1 ;
-// Result: polySplitRing2 //
-scale -r -p -2.38419e-006cm 18.940502cm 0cm 1.710318 1 1 ;
-//
-//
-//
-select -r pCube1.e[71] ;
-select -r pCube1.e[54] pCube1.e[56] pCube1.e[58:59] pCube1.e[71] pCube1.e[97] pCube1.e[107] pCube1.e[133] ;
-select -tgl pCube1.e[69] ;
-select -r pCube1.e[54] pCube1.e[56] pCube1.e[58:59] pCube1.e[62] pCube1.e[64] pCube1.e[66:67] pCube1.e[69] pCube1.e[71] pCube1.e[97] pCube1.e[99] pCube1.e[105] pCube1.e[107] pCube1.e[133] pCube1.e[135] ;
-select -tgl pCube1.e[74] ;
-select -r pCube1.e[54] pCube1.e[56] pCube1.e[58:59] pCube1.e[62] pCube1.e[64] pCube1.e[66:67] pCube1.e[69:72] pCube1.e[74] pCube1.e[76] pCube1.e[78] pCube1.e[80] pCube1.e[82] pCube1.e[84] pCube1.e[86] pCube1.e[88] pCube1.e[90] pCube1.e[92] pCube1.e[94] pCube1.e[96:100] pCube1.e[102:103] pCube1.e[105] pCube1.e[107] pCube1.e[133] pCube1.e[135] ;
-select -tgl pCube1.e[110] ;
-select -r pCube1.e[54] pCube1.e[56] pCube1.e[58:59] pCube1.e[62] pCube1.e[64] pCube1.e[66:67] pCube1.e[69:72] pCube1.e[74] pCube1.e[76] pCube1.e[78] pCube1.e[80] pCube1.e[82] pCube1.e[84] pCube1.e[86] pCube1.e[88] pCube1.e[90] pCube1.e[92] pCube1.e[94] pCube1.e[96:100] pCube1.e[102:103] pCube1.e[105:108] pCube1.e[110] pCube1.e[112] pCube1.e[114] pCube1.e[116] pCube1.e[118] pCube1.e[120] pCube1.e[122] pCube1.e[124] pCube1.e[126] pCube1.e[128] pCube1.e[130] pCube1.e[132:136] pCube1.e[138:139] ;
-polyBevel3 -fraction 0.5 -offsetAsFraction 1 -autoFit 1 -segments 2 -worldSpace 1 -smoothingAngle 30 -fillNgons 1 -mergeVertices 1 -mergeVertexTolerance 0.0001 -miteringAngle 180 -angleTolerance 180 -ch 1 pCube1.e[54] pCube1.e[56] pCube1.e[58:59] pCube1.e[62] pCube1.e[64] pCube1.e[66:67] pCube1.e[69:72] pCube1.e[74] pCube1.e[76] pCube1.e[78] pCube1.e[80] pCube1.e[82] pCube1.e[84] pCube1.e[86] pCube1.e[88] pCube1.e[90] pCube1.e[92] pCube1.e[94] pCube1.e[96:100] pCube1.e[102:103] pCube1.e[105:108] pCube1.e[110] pCube1.e[112] pCube1.e[114] pCube1.e[116] pCube1.e[118] pCube1.e[120] pCube1.e[122] pCube1.e[124] pCube1.e[126] pCube1.e[128] pCube1.e[130] pCube1.e[132:136] pCube1.e[138:139];
-// Result: polyBevel1 //
-setAttr "polyBevel1.segments" 1;
-setAttr "polyBevel1.fraction" 0.2;
-select -r pCube1 ;
-//
-//
-//
-select -r pCube1.f[30] ;
-select -tgl pCube1.f[126] ;
-select -r pCube1.f[22:24] pCube1.f[26:30] pCube1.f[124:126] pCube1.f[129] ;
-select -tgl pCube1.f[32] ;
-select -tgl pCube1.f[127] ;
-select -r pCube1.f[13:14] pCube1.f[22:30] pCube1.f[32:33] pCube1.f[35] pCube1.f[50:61] pCube1.f[122] pCube1.f[124:127] pCube1.f[129] ;
-select -tgl pCube1.f[19] ;
-select -tgl pCube1.f[36] ;
-select -r pCube1.f[13:14] pCube1.f[19] pCube1.f[21:61] pCube1.f[122:129] ;
-select -r pCube1.f[13:14] pCube1.f[19] pCube1.f[21:61] pCube1.f[122:129] ;
-select -tgl pCube1.f[17] ;
-select -tgl pCube1.f[18] ;
-select -r pCube1.f[10:61] pCube1.f[122:129] ;
-select -r pCube1.f[10:61] pCube1.f[122:129] ;
-polyExtrudeFacet -constructionHistory 1 -keepFacesTogether 1 -pvx 0 -pvy 18.94050318 -pvz 0 -divisions 1 -twist 0 -taper 1 -off 0 -thickness 0 -smoothingAngle 30 pCube1.f[10:61] pCube1.f[122:129];
-// Result: polyExtrudeFace6 //
-setAttr "polyExtrudeFace6.localTranslate" -type double3 0 0 0.561432 ;
-//
-//
-//
-CreatePolygonCube;
-polyCube -w 1 -h 1 -d 1 -sx 1 -sy 1 -sz 1 -ax 0 1 0 -cuv 4 -ch 1;
-// Result: pCube4 polyCube4 //
-move -r 0 0 19.085489 ;
-scale -r 4.220598 1 1 ;
-scale -r 1 1 2.27589 ;
-move -r 0 23.766661 0.353976 ;
-move -r 0 1.256653 -0.875374 ;
-move -r 0 0.627245 -0.0170114 ;
-// Warning: line 0: Cannot duplicate dagObjects and non-dagObjects in one command; Duplicating selected dagObject(s) only. //
-duplicate -rr;
-// Result: pCube5 //
-move -r 0 -1.388916 0 ;
-select -tgl pCube4 ;
-scale -r 1 0.51969 1 ;
-select -r pCube5 ;
-move -r 0 0.213222 0 ;
-//
-//
-//
-select -r pCube5 ;
-scale -r 1 0.567198 1 ;
-duplicate -rr;
-// Result: pCube7 //
-move -r 0 0 3.068127 ;
-rotate -r -os -fo 0 0 90 ;
-scale -r 1 1 1.959888 ;
-move -r 0 0 1.248968 ;
-move -r 0 -0.260536 0 ;
-select -cl  ;
-CreatePolygonTorus;
-polyTorus -r 1 -sr 0.5 -tw 0 -sx 20 -sy 20 -ax 0 1 0 -cuv 1 -ch 1;
-// Result: pTorus1 polyTorus1 //
-move -r 0 0 21.282374 ;
-rotate -r -os -fo 0 0 -90 ;
-move -r 0 25.635984 -0.367648 ;
-select -cl  ;
-select -r pCube7 ;
-scale -r 1 3.532689 1 ;
-select -r pTorus1 ;
-setAttr "polyTorus1.radius" 1.5;
-setAttr "polyTorus1.sectionRadius" 0.2;
-move -r 0 0 -0.254292 ;
-select -tgl pCube7 ;
-move -r 0 -0.537235 -0.478274 ;
-//
-//
-//
-select -r pTorus2 ;
-move -r 0 0 -1.115252 ;
-select -r pCube7 ;
-move -r 0 0.529639 0 ;
-select -r pTorus2 ;
-setAttr "polyTorus2.radius" 1.5;
-setAttr "polyTorus2.sectionRadius" 0.2;
-select -tgl pCube7 ;
-move -r 0 -0.686094 0 ;
-select -cl  ;
-select -r pCube7 ;
-move -r 0 0 -0.235067 ;
-move -r 0 0.142105 0 ;
-//
-//
-//
-rename |pCube7 "LOCK_BODY" ;
-// Result: LOCK_BODY //
-hilite -r pTorus2 ;
-select -r pTorus2 ;
-rename |pTorus2 "LOCK_1" ;
-// Result: LOCK_1 //
-select -r pCube5 ;
-rename |pCube5 "LOCK_A" ;
-// Result: LOCK_A //
-select -r pCube6 ;
-rename |pCube6 "LOCK_B" ;
-// Result: LOCK_B //
-select -r pCube1 ;
-rename |pCube1 "CHEST" ;
-// Result: CHEST //
-select -r LOCK_BODY  ;
-parent LOCK_BODY  LOCK_1;
-// Result: LOCK_1 //
-select -r LOCK_1 ;
-rotate -r -os -fo 0 15 0 ;
-//
-//
-//
-select -cl  ;
-parent LOCK_1 CHEST ;
-// Result: LOCK_1 //
-select -r LOCK_B ;
-parent LOCK_B CHEST ;
-// Result: LOCK_B //
-select -r LOCK_A ;
-parent LOCK_A CHEST ;
-// Result: LOCK_A //
-select -r CHEST ;
-select -r pCube2 ;
-select -r pCube2 pCube3 pCube4 pTorus1 ;
-doDelete;
+    bpy.ops.import_scene.obj(filepath=path + '\chest_for_Blender.obj')
 
+    chest = bpy.context.scene.objects['chest']
+    for name in ['Lock_Body', 'chest_metal_part', 'lock', 'lock001', 'lock_ring']:
+        obj = bpy.context.scene.objects[name]
+        bpy.ops.object.parent_clear(type='CLEAR_INVERSE')
+        obj.parent = chest
 
-    '''
+        # store a copy of the objects final transformation
+        # so we can read from it later.
+        ob_matrix_orig = obj.matrix_world.copy()
 
-    mel.eval(recorded_macro)
-    set_scale_keys(target='CHEST', keyframes=[[0.001, 57], [0.1, 63]])
-    set_position_keys(target='CHEST', keyframes=[[[-3.892, 0.764, 0.349], 57, [1, 1]],
-                                               [[-3.892, 2.297, 0.349], 61, [1, 1]],
-                                               [[-3.892, 0.764, 0.349], 63, [1, 1]]])
-    cmds.rotate('CHEST')
-    cmds.move(-3.941, -1.533, 0.061, absolute=True)
-    cmds.parent('CHEST', 'land')
+        # reset parent inverse matrix
+        # (relationship created when parenting)
+        obj.matrix_parent_inverse.identity()
+
+        # re-apply the difference between parent/child
+        # (this writes directly into the loc/scale/rot) via a matrix.
+        obj.matrix_basis = obj.parent.matrix_world.inverted() * ob_matrix_orig
+
+        obj.select = False
+
+    set_scale_keys(target='chest', keyframes=[[0.01, 27], [1, 31]])
+    set_position_keys(target='chest', keyframes=[[[-3.892, 0.349, -1.533], 27],
+                                                        [[-3.892, 0.349, 0], 31],
+                                                        [[-3.892, 0.349, -1.533], 33]])
 
 
 def create_and_animate_trees():
@@ -821,9 +635,8 @@ def create_and_animate_trees():
     land = bpy.context.scene.objects['land']
 
     palm = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
-    palm.rotation_euler = (-0.051025, 1.53, 1.69211)  # Rotate the palm
-    palm.location = mathutils.Vector((-7.04, -1.05, 9.82))  # Position the palm
-    palm.parent = land
+    palm.rotation_euler = (0.135, 0, 4.07)  # Rotate the palm
+    palm.location = mathutils.Vector((0.68, -10.74, 2.40))  # Position the palm
 
     palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=34, id_num=2, anim_start=40, anim_end=45)
     palm.rotation_euler = (0.0226778, 0.247746, 1.71606)  # Rotate the palm
