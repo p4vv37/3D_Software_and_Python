@@ -1,8 +1,8 @@
-# __author__ = 'Pawe³ Kowalski'
+# __author__ = 'Pawe? Kowalski'
 #
 # This script was created to demonstrate the use of Python in Autodesk Maya
 #
-# Copyright (C) Pawe³ Kowalski
+# Copyright (C) Pawe? Kowalski
 # www.pkowalski.com
 # www.behance.net/pkowalski
 #
@@ -271,6 +271,10 @@ def prepare_scene():
     """
     #bpy.ops.import_scene.obj()
     #bpy.ops.script.execute_preset(filepath="C:\\Program Files\\Blender Foundation\\Blender\\2.77\\scripts\\presets\\framerate\\25.py", menu_idname="RENDER_MT_framerate_presets")
+    for obj in bpy.data.objects:
+        obj.select = True
+    bpy.ops.object.delete()
+
     bpy.context.scene.frame_end = 260
     bpy.context.scene.frame_start = 0
 
@@ -298,13 +302,6 @@ def prepare_scene():
 
 
     return(0)
-
-    cam = cmds.camera(name="RenderCamera", focusDistance=35, position=[-224.354, 79.508, 3.569],
-                      rotation=[-19.999,-90,0])  # create camera to set background (imageplane)
-    # Set Image Plane for camera background
-    cmds.imagePlane(camera=cmds.ls(cam)[1], fileName=(path.replace("\\", "/") + '/bg.bmp'))
-    cmds.setAttr("imagePlaneShape1.depth", 400)
-    cmds.setAttr("imagePlaneShape1.fit", 4)
 
 
 def import_and_animate_basic_meshes():
@@ -632,8 +629,6 @@ def create_and_animate_trees():
     It was created to show how to create basic geometry objects, use instances and use modificators.
     """
 
-    land = bpy.context.scene.objects['land']
-
     palm = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
     palm.rotation_euler = (0.135, 0, 4.07)  # Rotate the palm
     palm.location = mathutils.Vector((0.68, -10.74, 2.40))  # Position the palm
@@ -641,17 +636,14 @@ def create_and_animate_trees():
     palm = create_palm(diameter=1.6, segs_num=20, leafs_num=9, bending=34, id_num=2, anim_start=40, anim_end=45)
     palm.rotation_euler = (0.0226778, 0.247746, 1.71606)  # Rotate the palm
     palm.location = mathutils.Vector((28, -6.3, -2.5))  # Position the palm
-    #palm.parent = land
 
     palm = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
     palm.rotation_euler = (0.0226778, 0.247746, -1.94985)  # Rotate the palm
     palm.location = mathutils.Vector((34, -34, -2.5))  # Position the palm
-    #palm.parent = land
 
     palm = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
     palm.rotation_euler = (0.0226778, 0.244222, -1.03672)  # Rotate the palm
     palm.location = mathutils.Vector((14, -19, -2.5))  # Position the palm
-    #palm.parent = land
 
 
 def change_hierarchy_and_animate():
@@ -665,8 +657,31 @@ def change_hierarchy_and_animate():
 
     for obj in bpy.context.scene.objects:
         if obj.parent == None:
-            if obj != top_parent:
+            if obj != top_parent and obj.type not in ['LAMP', 'CAMERA']:
                 obj.parent = top_parent
+
+   # top_parent.rotation_euler[2] = -0.01*math.pi
+  #  top_parent.keyframe_insert(data_path='rotation_euler', frame = 0)
+
+ #   top_parent.rotation_euler[2] =  0.1*math.pi
+#    top_parent.keyframe_insert(data_path='rotation_euler', frame = 260)
+
+    # create a new action and assign it to object
+    top_parent.animation_data_create()
+    action = bpy.data.actions.new("RotateAction")
+    top_parent.animation_data.action = action
+    # fcurve data_path
+    data_path = "rotation_euler"
+    # (frame, value) for keyframe point
+    times = [260, 0]
+    values = [math.radians(1.8), -math.radians(18)]        # new fcurve
+    easings = ['EASE_OUT', 'AUTO']
+    fc = action.fcurves.new(data_path, index=2)
+    # add a new keyframe point
+    fc.keyframe_points.add(count=2)
+    for kfp in fc.keyframe_points:
+        kfp.co = (times.pop(), values.pop())
+        kfp.easing = easings.pop()
 
     bpy.ops.object.camera_add()
     bpy.context.scene.objects.active.name = 'RenderCamera'
@@ -681,36 +696,33 @@ def change_hierarchy_and_animate():
 
     camera.rotation_euler = (1.1775, 0.0, -1.64)
     camera.location = mathutils.Vector((-149.0, 3.569, 52.082))
-    return(0)
-    cmds.lookThru( 'perspView', 'RenderCamera1') # Change the perspective viewport to the render camera.
 
-    top_locator = cmds.spaceLocator() # Parent for all the elemements that will rotate together
-    objects_list = ['land', 'water', 'cloud', 'shark', ]
+    bpy.ops.mesh.primitive_plane_add(view_align=False,
+                                     enter_editmode=False,
+                                     location=(0, 0, 0),
+                                     layers=(True, False, False, False, False,
+                                             False, False, False, False, False,
+                                             False, False, False, False, False,
+                                             False, False, False, False, False))
 
-    for obj in objects_list:
-        cmds.parent(obj, top_locator)
+    camera = bpy.context.scene.objects["RenderCamera"]
+    plane = bpy.data.objects["Plane"]
 
-    cmds.setKeyframe(top_locator, attribute='rotateY', v=20, time=260, itt="plateau", ott="plateau")
-    cmds.setKeyframe(top_locator, attribute='rotateY', v=0, time=0, itt="linear", ott="linear")
+    plane.location = camera.location
+    plane.rotation_euler = camera.rotation_euler
 
-    dome_light = cmds.polySphere(r=500) # This sphere is a substitute of a skylight in 3Ds Max
-    cmds.polyNormal(dome_light, normalMode=0) # The normals have to point to inside
+    # one blender unit in x-direction
+    bpy.context.scene.update()
+    vec = mathutils.Vector((0.0, 0.0, -300.0))
+    inv = plane.matrix_world.copy()
+    inv.invert()
+    # vec aligned to local axis
+    vec_rot = vec * inv
+    plane.location = plane.location + vec_rot
 
-    cmds.setAttr(dome_light[0]+".miDeriveFromMaya", 0) # Enable changes in object render settings
-    cmds.setAttr(dome_light[0]+".miVisible", 0) # This object will be invisible to camera
-    cmds.setAttr(dome_light[0]+".miShadow", 0) # And will not affect shadows
-    cmds.rename(dome_light[0], "dome_light")
 
-    area_light = cmds.shadingNode('areaLight', asLight=True)
-    cmds.scale(25, 25, 25, area_light, absolute=True)
-    cmds.move(-230.59, 178.425, 99.192, area_light)
-    cmds.rotate(0, -68.929, -37.987, area_light)
-
-    cmds.setAttr(area_light+".intensity", 120000.0)
-    cmds.setAttr(area_light+".areaLight", 1)
-    cmds.setAttr(area_light+".areaType", 1)
-    cmds.setAttr(area_light+".decayRate", 2)
-    cmds.setAttr(area_light+".areaHiSamples", 64)
+    plane.scale = (190, 0.75*190, 0)
+    plane.name = 'Background'
 
 
 def create_and_assign_materials():
@@ -718,95 +730,109 @@ def create_and_assign_materials():
     Function creates and applies materials to the objects
     It was created to show how to use materials.
     """
+
+    path = bpy.context.scene.content_path
+
+    try:
+        bg_img = bpy.data.images.load(path.replace("\\", "/") + '/bg.bmp')
+    except:
+        raise NameError("Cannot load image %s" % realpath)
+
+    background = bpy.data.objects['Background']
+    background.data.materials.clear()
+
+    bpy.ops.object.mode_set(mode='EDIT')
+    me = background.data
+    bm = bmesh.from_edit_mesh(me)
+
+    uv_layer = bm.loops.layers.uv.verify()
+    bm.faces.layers.tex.verify()
+    for f in bm.faces:
+            luv = f.loops[0][uv_layer]
+            luv.uv = (1, 1)
+            luv = f.loops[1][uv_layer]
+            luv.uv = (0, 1)
+            luv = f.loops[2][uv_layer]
+            luv.uv = (0, 0)
+            luv = f.loops[3][uv_layer]
+            luv.uv = (1, 0)
+
+    bmesh.update_edit_mesh(me)
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    plane_mat = bpy.data.materials.new("Background_material")
+    plane_mat.use_nodes = True
+    plane_mat_nt = plane_mat.node_tree
+    plane_mat_nodes = plane_mat.node_tree.nodes
+    plane_mat_surface = plane_mat_nodes['Material Output'].inputs['Surface']
+    emission = plane_mat_nodes.new("ShaderNodeEmission")
+    bgTexture = plane_mat_nodes.new("ShaderNodeTexImage")
+    bgTexture.image = bg_img
+
+    mixShaders = plane_mat_nodes.new("ShaderNodeMixShader")
+    lightPath = plane_mat_nodes.new("ShaderNodeLightPath")
+
+    plane_mat_nt.links.new(bgTexture.outputs['Color'], emission.inputs["Color"])
+    plane_mat_nt.links.new(lightPath.outputs["Is Camera Ray"], mixShaders.inputs["Fac"])
+    plane_mat_nt.links.new(emission.outputs['Emission'], mixShaders.inputs[2])
+    plane_mat_nt.links.new(mixShaders.outputs["Shader"], plane_mat_surface)
+    background.data.materials.append(plane_mat)
+
+
+    land_mat = bpy.data.materials.new("Sand_material")
+    land_mat.diffuse_color = (1, 0.74, 0.45)
+
+    wood_mat = bpy.data.materials.new("Wood_material")
+    wood_mat.diffuse_color = (0.18, 0.13, 0.13)
+
+    leaf_mat = bpy.data.materials.new("Leaf_material")
+    leaf_mat.diffuse_color = (0.4, 1, 0.3)
+
+    gray_mat = bpy.data.materials.new('Gray_material')
+    gray_mat.diffuse_color = (0.84, 0.84, 0.84)
+
+    water_mat = bpy.data.materials.new("Water_material")
+    water_mat.use_nodes = True
+
+    water_mat_nt = water_mat.node_tree
+    water_mat_nodes = water_mat.node_tree.nodes
+    water_mat_surface = water_mat_nodes['Material Output'].inputs['Surface']
+    emission = water_mat_nodes.new("ShaderNodeEmission")
+    bgTexture = water_mat_nodes.new("ShaderNodeTexImage")
+    bgTexture.image = bg_img
+
+    mixShaders = water_mat_nodes.new("ShaderNodeMixShader")
+    glassShader = water_mat_nodes.new("ShaderNodeBsdfGlass")
+    diffuseShader = water_mat_nodes.new("ShaderNodeBsdfDiffuse")
+
+    diffuseShader.inputs["Color"].default_value = (0, 0.208633, 0.201736, 1)
+    glassShader.inputs["Color"].default_value = (0.12549, 0.988235, 1, 1)
+    glassShader.inputs["Roughness"].default_value = 0.24
+
+    mixShaders.inputs['Fac'].default_value = 0.2
+    water_mat_nt.links.new(glassShader.outputs[0], mixShaders.inputs[1])
+    water_mat_nt.links.new(diffuseShader.outputs[0], mixShaders.inputs[2])
+    water_mat_nt.links.new(mixShaders.outputs["Shader"], water_mat_surface)
+
+    for obj in bpy.context.scene.objects: # Assign materials to objects
+        if any(x in obj.name for x in ['element', 'root', 'chest']):
+            obj.data.materials.clear()
+            obj.data.materials.append(wood_mat)
+        if any(x in obj.name for x in ['shark', 'lock']):
+            obj.data.materials.clear()
+            obj.data.materials.append(gray_mat)
+        if "leaf" in obj.name:
+            obj.data.materials.clear()
+            obj.data.materials.append(leaf_mat)
+        if "water" in obj.name:
+            obj.data.materials.clear()
+            obj.data.materials.append(water_mat)
+        if "land" in obj.name:
+            obj.data.materials.clear()
+            obj.data.materials.append(land_mat)
+
+
     return(0)
-
-    light_dome_mat = cmds.shadingNode("surfaceShader", asShader=True)
-    cmds.setAttr(light_dome_mat+".outColorR", 0.15)
-    cmds.setAttr(light_dome_mat+".outColorG", 0.15)
-    cmds.setAttr(light_dome_mat+".outColorB", 0.15)
-    light_dome_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
-    cmds.connectAttr('%s.outColor' %light_dome_mat ,'%s.surfaceShader' %light_dome_sg)
-    cmds.rename(light_dome_mat, 'light_dome_material')
-
-    land_mat = cmds.shadingNode("lambert", asShader=True)
-    cmds.setAttr(land_mat+".colorR", 1.0)
-    cmds.setAttr(land_mat+".colorG", 0.75)
-    cmds.setAttr(land_mat+".colorB", 0.45)
-    land_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
-    cmds.connectAttr('%s.outColor' %land_mat ,'%s.surfaceShader' %land_sg)
-    cmds.sets("land", e=True, forceElement=land_sg)
-    cmds.rename(land_mat, 'land_material')
-
-
-    wood_mat = cmds.shadingNode("lambert", asShader=True)
-    cmds.setAttr(wood_mat+".colorR", 0.18)
-    cmds.setAttr(wood_mat+".colorG", 0.13)
-    cmds.setAttr(wood_mat+".colorB", 0.13)
-    wood_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
-    cmds.connectAttr('%s.outColor' %wood_mat ,'%s.surfaceShader' %wood_sg)
-    cmds.rename(wood_mat, 'wood_material')
-
-
-    leaf_mat = cmds.shadingNode("lambert", asShader=True)
-    cmds.setAttr(leaf_mat+".colorR", 0.4)
-    cmds.setAttr(leaf_mat+".colorG", 1.0)
-    cmds.setAttr(leaf_mat+".colorB", 0.3)
-    leaf_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
-    cmds.connectAttr('%s.outColor' %leaf_mat ,'%s.surfaceShader' %leaf_sg)
-    cmds.rename(leaf_mat, 'leaf_material')
-
-
-    gray_mat = cmds.shadingNode("lambert", asShader=True)
-    cmds.setAttr(gray_mat+".colorR", 0,84)
-    cmds.setAttr(gray_mat+".colorG", 0,84)
-    cmds.setAttr(gray_mat+".colorB", 0,84)
-    gray_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
-    cmds.connectAttr('%s.outColor' %gray_mat ,'%s.surfaceShader' %gray_sg)
-    cmds.rename(gray_mat, 'gray_material')
-
-
-    water_mat = cmds.shadingNode("mia_material_x", asShader=True)
-    cmds.setAttr(water_mat+".diffuseR", 0.0)
-    cmds.setAttr(water_mat+".diffuseG", 0.209)
-    cmds.setAttr(water_mat+".diffuseB", 0.202)
-    cmds.setAttr(water_mat+".refl_gloss", 0.84)
-    cmds.setAttr(water_mat+".reflectivity", 0.6)
-    cmds.setAttr(water_mat+".diffuse_roughness", 0.16)
-    cmds.setAttr(water_mat+".refr_ior", 1.3)
-    cmds.setAttr(water_mat+".transparency", 0.43)
-    cmds.setAttr(water_mat+".refr_gloss", 0.76)
-    cmds.setAttr(water_mat+".refr_falloff_on", 1)
-    cmds.setAttr(water_mat+".refl_falloff_on", 1)
-    cmds.setAttr(water_mat+".refr_falloff_dist", 42)
-    cmds.setAttr(water_mat+".refl_falloff_dist", 10)
-    cmds.setAttr(water_mat+".refr_falloff_color_on", 1)
-    cmds.setAttr(water_mat+".refl_falloff_color_on", 1)
-    cmds.setAttr(water_mat+".refr_depth", 6)
-    cmds.setAttr(water_mat+".refr_falloff_colorR", 0.125)
-    cmds.setAttr(water_mat+".refr_falloff_colorG", 0.988)
-    cmds.setAttr(water_mat+".refr_falloff_colorB", 1.0)
-    cmds.setAttr(water_mat+".refl_falloff_colorR", 0.2)
-    cmds.setAttr(water_mat+".refl_falloff_colorG", 0.2)
-    cmds.setAttr(water_mat+".refl_falloff_colorB", 0.2)
-    water_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
-    cmds.connectAttr('%s.message' %water_mat ,'%s.miPhotonShader' %water_sg)
-    cmds.connectAttr('%s.message' %water_mat ,'%s.miShadowShader' %water_sg)
-    cmds.connectAttr('%s.message' %water_mat ,'%s.miMaterialShader' %water_sg)
-    cmds.rename(water_mat, 'water_material')
-
-
-    for obj in cmds.ls(geometry=True, ): # Assign materials to objects
-        if "dome_light" in obj:
-            cmds.sets(obj, e=True, forceElement=light_dome_sg)
-        if "LOCK" in obj:
-            cmds.sets(obj, e=True, forceElement=gray_sg)
-        if any(x in obj for x in ['segment', 'CHEST']):
-            cmds.sets(obj, e=True, forceElement=wood_sg)
-        if "leaf" in obj:
-            cmds.sets(obj, e=True, forceElement=leaf_sg)
-        if "water" in obj:
-            cmds.sets(obj, e=True, forceElement=water_sg)
-
 
 #
 #
@@ -891,9 +917,6 @@ class ResetOperator(bpy.types.Operator):
         bpy.ops.object.delete()
         bpy.context.scene.actions_records.clear()
         bpy.app.handlers.scene_update_pre.append(collhack)
-        for obj in bpy.data.objects:
-            obj.select = True
-        bpy.ops.object.delete()
         return {'FINISHED'}
 
 
@@ -1054,12 +1077,10 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-    for obj in bpy.data.objects:
-        obj.select = True
-    bpy.ops.object.delete()
     bpy.context.scene.next_step = 0
     bpy.context.scene.actions_records.clear()
     my_item = bpy.context.scene.actions_records.add()
     my_item.name = "Zadanie"
     my_item.time = "czas"
     bpy.app.handlers.scene_update_pre.append(collhack)
+
