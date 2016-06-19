@@ -288,6 +288,8 @@ def prepare_scene():
     nt = bpy.data.worlds[wd.name].node_tree
     scn.render.resolution_x = 1024
     scn.update()
+    bpy.context.scene.cycles.samples = 64
+
     nt.nodes['Background'].inputs[0].default_value = (1, 1, 1, 1)
     nt.nodes['Background'].inputs[1].default_value = 0.2
 
