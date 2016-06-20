@@ -1,4 +1,14 @@
 # 3D_Software_and_Python
-Example of Python scripts for 3D Studio Max, Maya and Blender. 
-Those scripts use Python API to create the same scene in: Autodesk 3D Studio Max, Autodesk Maya and Blender.
+Example of Python scripts for Autodesk 3D Studio Max, Autodesk Maya and Blender. 
+Those scripts use Python API to create simmilar scene in: Autodesk 3D Studio Max, Autodesk Maya and Blender.
 Created to show the basics of using Python in those applications.
+
+Tasks covered by scipts:
+-Creating meshes from a list of vertices and faces
+-Creating lights, cameras etc.
+-Importing objects
+-Creating materials
+-Setting render
+-Animating objects
+-Using instances
+
