@@ -4,6 +4,7 @@
  - www.pkowalski.com
  - www.behance.net/pkowalski
 
+
  Open the script from 3D Studio Max Listener with command:
  python.ExecuteFile "path`to`file\main.py"
 
