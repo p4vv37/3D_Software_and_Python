@@ -1,8 +1,8 @@
-# __author__ = 'Pawe? Kowalski'
+# __author__ = 'Paweł Kowalski'
 #
 # This script was created to demonstrate the use of Python in Autodesk Maya
 #
-# Copyright (C) Pawe? Kowalski
+# Copyright (C) Paweł Kowalski
 # www.pkowalski.com
 # www.behance.net/pkowalski
 #
@@ -34,7 +34,7 @@
 
 bl_info = {
     "name": "MyScript",
-    "author": "Pawe? Kowalski",
+    "author": "Paweł Kowalski",
     "version": (1, 0),
     "blender": (2, 76, "b"),
     "location": "Krakow",
