@@ -5,10 +5,6 @@
  - www.pkowalski.com
  - www.behance.net/pkowalski
 
-
- Open the script from Script Editor with command:
- execcfile('path:\to\Script_Maya.py')
-
 ## How to use:
 
  To run the script execute:
