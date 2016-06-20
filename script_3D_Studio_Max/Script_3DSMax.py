@@ -1,4 +1,4 @@
-﻿__author__ = 'Pawe? Kowalski'
+﻿__author__ = 'Paweł Kowalski'
 #
 # This script was created to demonstrate the use of Python in Autodesk 3D Studio Max
 #
