@@ -1,6 +1,7 @@
 ## This script uses Python API in Autodesk Maya
 
  - Copyright (C) Paweł Kowalski
+ 
  - www.pkowalski.com
  - www.behance.net/pkowalski
 
