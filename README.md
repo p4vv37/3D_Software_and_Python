@@ -19,7 +19,7 @@ All scripts have simple GUIs
 - Download the content of the "common" directory. Script will ask for path to those files before running
 - Read the Readme.md file inside directory wit a script for choosen software and fallow the instructions. Every software has a different way of running scripts
 
-# License:
+## License:
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
