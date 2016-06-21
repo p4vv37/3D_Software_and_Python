@@ -2,7 +2,7 @@
 #
 # This script was created to demonstrate the use of Python in Autodesk 3D Studio Max
 #
-# Copyright (C) Pawe? Kowalski
+# Copyright (C) Paweł Kowalski
 # www.pkowalski.com
 # www.behance.net/pkowalski
 #

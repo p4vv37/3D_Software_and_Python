@@ -91,7 +91,7 @@ def leafs_rotations(number_of_leafs):
     :return: Python list - List of angles of leafs around the palm tree
     """
 
-    x = -180  # Leafs are placed around the trunk, so the range is 2*pi (360 deg). x = 0, y = 2*pi would also be ok.
+    x = -180  # Leafs are placed around the trunk, so the range is 360 deg. x = 0, y = 2*pi would also be ok.
     y = 180
     angles = []
     jump = (y - x) / float(number_of_leafs)  # Devide the range by the number of leafs and create an array

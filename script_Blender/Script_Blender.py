@@ -33,15 +33,14 @@
 
 
 bl_info = {
-    "name": "MyScript",
-    "author": "PaweÅ‚ Kowalski",
+    "name": "Blender examplary script",
+    "author": "Pawe³‚ Kowalski",
     "version": (1, 0),
     "blender": (2, 76, "b"),
-    "location": "Krakow",
-    "description": "",
-    "warning": "",
-    "wiki_url": "",
-    "category": ""}
+    "location": "Properties > Scene",
+    "description": "Examplary script for Python API of Blender",
+    "category": "Scene"
+}
 
 import bpy
 import bmesh
@@ -53,9 +52,6 @@ import os
 import time
 import math
 import random
-import glob
-from random import uniform
-
 
 def frange(start, end, jump):
     """
@@ -75,14 +71,15 @@ def set_scale_keys(target, keyframes):
     """
     Function animates the scale of given object by creating the given keyframes.
 
-    :param obj:  String - Name of an object which scale will be animated
+    :param target:  String - Name of an object which scale will be animated
     :param keyframes: Python list - Keyframes that will be created: [[int time, float scale (1 = 100%),] ...]
     """
 
     for keyframe in keyframes:  # For every keyframe from the list of keyframes scale object at proper time
         scale_value = float(keyframe[0])
-        bpy.data.objects[target].scale = (scale_value, scale_value, scale_value)
-        bpy.data.objects[target].keyframe_insert(data_path='scale', frame = keyframe[1])
+        bpy.data.objects[target].scale = (scale_value, scale_value, scale_value) # Set values for scale of object
+        bpy.data.objects[target].keyframe_insert(data_path='scale', frame=keyframe[1]) # Insert keyframe to the scale
+
 
 def leafs_rotations(number_of_leafs):
     """
@@ -90,14 +87,14 @@ def leafs_rotations(number_of_leafs):
     Leafs should be placed more or less evenly around the trunk but appear to be placed randomly.
     The leafs should not be placed too close, because they would overlap.
 
-    :param num: int - Number of leafs
+    :param number_of_leafs: int - Number of leafs
     :return: Python list - List of angles of leafs around the palm tree
     """
 
-    x = -180  # Leafs are placed around the trunk, so the range is 2*pi (360 deg). x = 0, y = 2*pi would also be ok.
+    x = -180  # Leafs are placed around the trunk, so the range is 360 deg.. x = 0, y = 360 would also be ok.
     y = 180
     angles = []
-    jump = (y - x) / float(number_of_leafs)  # Devide the range by the number of leafs and create an array
+    jump = (y - x) / float(number_of_leafs)  # Divide the range by the number of leafs and create an array
 
     while x < y:
         random.seed()
@@ -111,33 +108,33 @@ def set_position_keys(target, keyframes):
     """
     Function animates the position of given object by creating the given keyframes.
 
-    :param obj:  String - Name of an object which scale will be animated
+    :param target:  String - Name of an object which scale will be animated
     :param keyframes: Python list - Keyframes that will be created: [[int time, [float x, float y, float z]], ...]
     """
 
-    for keyframe in keyframes:  # For every keyframe from the list of keyframes scale object at proper time
-        bpy.data.objects["cloud"].location = keyframe[0]
-        bpy.data.objects[target].keyframe_insert(data_path='location', frame = keyframe[1])
+    for keyframe in keyframes:
+        bpy.data.objects[target].location = keyframe[0]
+        bpy.data.objects[target].keyframe_insert(data_path='location', frame=keyframe[1])
 
 
 def create_object(verts_pos, face_verts, name):
-
     """
     Function creates an object with mesh given by vertice and face data.
 
     :type face_verts: Python list
     :type verts_pos: Python list
+    :type name: String
     """
-    mesh = bpy.data.meshes.new(name)
-    bm = bmesh.new()
+    mesh = bpy.data.meshes.new(name) # Create the data for object that will be created
+    bm = bmesh.new() # Create the bmesh that will store the mesh of an object
     for v_co in verts_pos:
-            bm.verts.new(v_co)
+        bm.verts.new(v_co) # Add a new vertex for every position in the list
     bm.verts.ensure_lookup_table()
     for f_idx in face_verts:
-        bm.faces.new([bm.verts[i] for i in f_idx])
-    bm.to_mesh(mesh)
+        bm.faces.new([bm.verts[i] for i in f_idx]) # Add a new face for every entry in the list
+    bm.to_mesh(mesh) # write the data from bmesh "bm" to mesh "mesh"
     mesh.update()
-    object_utils.object_data_add(bpy.context, mesh)
+    object_utils.object_data_add(bpy.context, mesh) # Add the object with data from "mesh" to the scene
 
 
 def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim_end):
@@ -159,37 +156,36 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
 
     keyframe_interval = (anim_end - anim_start) / (segs_num + 1.0)  # interval of scale keframes of the pine segments
 
-    # list of times of keyframes for the pine
-    # and leafs. Equal time intervals.
+    # list of times of keyframes for the pine and leafs. Equal time intervals.
     keyframe_list = list(frange(start=anim_start, end=anim_end, jump=keyframe_interval))
 
     keyframe_list.reverse()  # Because the pop() will be used and the first frame should be the smallest number
 
-    bpy.ops.mesh.primitive_cone_add(radius1=r1, radius2=r2, depth=h)
-    bpy.context.scene.objects.active.location = (0, 0, 0)
-    bpy.context.scene.objects.active.name = "root_" + str(id_num)
+    bpy.ops.mesh.primitive_cone_add(radius1=r1, radius2=r2, depth=h) # Create a "cone" primitive.
+                                                                     # It will be set as a current active object
+    bpy.context.scene.objects.active.location = (0, 0, 0) # set the location of the selected object.
+    bpy.context.scene.objects.active.name = "root_" + str(id_num) # rename the object
     segments_tab = []  # A list of all the segments of the tree.
     anim_start_frame = keyframe_list.pop()
     set_scale_keys(target="root_" + str(id_num), keyframes=[[0.001, anim_start_frame],
-                                                                   [1.2, anim_start_frame + keyframe_interval],
-                                                                   [1, anim_start_frame + 2*keyframe_interval]])
-    #translation = mathutils.Vector((0, 0, diameter))
-    segments_tab.append(bpy.context.scene.objects.active)
-    for i in range(segs_num-1):
-        current_segment_name = 'Palm_element_' + str(id_num) + '_' + str(i)
-        bpy.ops.object.duplicate()
-        #bpy.ops.object.duplicate_move( OBJECT_OT_duplicate=None, TRANSFORM_OT_translate={"value":translation})
-        segment = bpy.context.scene.objects.active
-        segment.name = current_segment_name
-        segment.location = mathutils.Vector((0,0,0))
-        segment.scale = (1.0 - ((i+1) / (segs_num * 4.0)), 1.0 - ((i+1) / (segs_num * 4.0)), 1)
-        anim_start_frame = keyframe_list.pop()
-        set_scale_keys(target=current_segment_name, keyframes=[[0.001, anim_start_frame],
-                                                                       [1.2, anim_start_frame + keyframe_interval],
-                                                                       [1, anim_start_frame + 2*keyframe_interval]])
+                                                            [1.2, anim_start_frame + keyframe_interval],
+                                                            [1, anim_start_frame + 2 * keyframe_interval]])
+    segments_tab.append(bpy.context.scene.objects.active) # add the active object (cone) to the list of segments
 
-        # assemble the new matrix
-        segment.parent = segments_tab[0]
+    for i in range(segs_num - 1): # create a segs_num-1 number of copies.
+                                  # There will be segs_num segments then, with root segment included.
+        current_segment_name = 'Palm_element_' + str(id_num) + '_' + str(i) # Ordnung muss sein
+        bpy.ops.object.duplicate() # Copies will be used here instead of instances (objects with linked data)
+                                   # Leafs will be created as an instances
+        segment = bpy.context.scene.objects.active # Created copy is a current active object
+        segment.name = current_segment_name
+        segment.location = mathutils.Vector((0, 0, 0))
+        segment.scale = (1.0 - ((i + 1) / (segs_num * 4.0)), 1.0 - ((i + 1) / (segs_num * 4.0)), 1)
+        anim_start_frame = keyframe_list.pop() # pop the starting frame of this segment animation
+        set_scale_keys(target=current_segment_name, keyframes=[[0.001, anim_start_frame],
+                                                               [1.2, anim_start_frame + keyframe_interval],
+                                                               [1, anim_start_frame + 2 * keyframe_interval]])
+        segment.parent = segments_tab[0] # every segment will be parented to the root segment
         segments_tab.append(segment)
 
     verts_list = [[0.0874634, 0.283682, -0.150049], [-9.33334, 3.45312, -5.19915], [-0.0979366, -0.242619, -0.151449],
@@ -220,7 +216,7 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
                   [19, 31, 34], [19, 25, 29], [22, 34, 30], [35, 23, 20], [21, 24, 30], [20, 21, 33], [19, 22, 28],
                   [19, 23, 35], [22, 24, 36], [17, 14, 26], [27, 15, 12], [26, 14, 15], [31, 7, 10], [25, 13, 17],
                   [34, 10, 18], [13, 16, 38], [12, 39, 38]]
-    i = 0
+    i = 0 # This could, should and will be avoided..
     current_leaf_name = "leaf_" + str(id_num) + '_' + str(i)
     i += 1
 
@@ -232,14 +228,14 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
                    keyframes=[[0.001, anim_start_frame],
                               [1, anim_start_frame + keyframe_interval]])
 
-    bpy.context.scene.objects[current_leaf_name].location = mathutils.Vector((0,0,0))
+    bpy.context.scene.objects[current_leaf_name].location = mathutils.Vector((0, 0, 0))
     bpy.context.scene.objects[current_leaf_name].parent = last_node
-    for rot_z in leafs_rotations(number_of_leafs=leafs_num):
+
+    for rot_z in leafs_rotations(number_of_leafs=leafs_num): # create an instance of leaf for every angle returned by
+                                                             # leafs_rotation() function
         current_leaf_name = "leaf_" + str(id_num) + '_' + str(i)
-        bpy.context.scene.update()
         bpy.ops.object.duplicate(linked=True)
         leaf = bpy.context.scene.objects.active
-        bpy.context.scene.update()
         leaf.name = current_leaf_name
         leaf.location[2] = diameter
         leaf.scale = (0.9, 0.9, 0.9)
@@ -248,62 +244,58 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
                                rot_z)
         i += 1
 
-
     i = 0
-    pos = (0,0,0)
+    pos = (0, 0, 0)
     for el in segments_tab[1:]:
-        rotation = math.radians(bending*(float(i)/segs_num))
-        pos = (pos[0] + math.sin(rotation)*diameter,
-            0,
-            pos[2] + math.cos(rotation)*diameter)
+        rotation = math.radians(bending * (float(i) / segs_num))
+        pos = (pos[0] + math.sin(rotation) * diameter,
+               0,
+               pos[2] + math.cos(rotation) * diameter)
         print(pos)
         el.location = mathutils.Vector(pos)
         el.rotation_euler[1] = rotation
-        i+=1
-    return(segments_tab[0])
+        i += 1
+    return (segments_tab[0])
 
 
 def prepare_scene():
     """
     The function sets the basic parameters of the scene: time range and render settings.
 
-    :param path: string - The directory with necessary files
     """
-    #bpy.ops.import_scene.obj()
-    #bpy.ops.script.execute_preset(filepath="C:\\Program Files\\Blender Foundation\\Blender\\2.77\\scripts\\presets\\framerate\\25.py", menu_idname="RENDER_MT_framerate_presets")
-    for obj in bpy.data.objects:
+
+    for obj in bpy.data.objects: # Blender usually creates some object in new file. Script deletes all objects in the
+                                 # scene to avoid confusion
         obj.select = True
     bpy.ops.object.delete()
 
-    bpy.context.scene.frame_end = 260
+    bpy.context.scene.frame_end = 260 # set the animation range
     bpy.context.scene.frame_start = 0
 
-    scn = bpy.context.scene
+    scn = bpy.context.scene # Just to make next lines shorter
 
-    scn.render.resolution_x = 1024
+    scn.render.resolution_x = 1024 # Set the resolution of render
     scn.render.resolution_y = 768
-    scn.render.engine = 'CYCLES'
-    scn.world.use_nodes = True
+    scn.render.engine = 'CYCLES' # Change the renderer to Cycles
+    scn.world.use_nodes = True # Use shader nodes to render the world - we need them to set background
     wd = scn.world
     nt = bpy.data.worlds[wd.name].node_tree
-    scn.render.resolution_x = 1024
-    scn.update()
+    scn.update() # This function need to be evaluated sometimes. It was established, by trial and error method,
+                 # that it need to be evaluated now or the next line will produce an error
     bpy.context.scene.cycles.samples = 64
 
-    nt.nodes['Background'].inputs[0].default_value = (1, 1, 1, 1)
-    nt.nodes['Background'].inputs[1].default_value = 0.2
+    nt.nodes['Background'].inputs[0].default_value = (1, 1, 1, 1) # Set the color of background that will be used
+                                                                  # for lighting
+    nt.nodes['Background'].inputs[1].default_value = 0.2          # Set the intensity of background emission
 
-    bpy.ops.object.lamp_add(type='AREA',
+    bpy.ops.object.lamp_add(type='AREA', # Create an area light
                             view_align=False,
                             location=(-186.0, -134, 190),
                             rotation=(0.79, 0, -0.96),
                             layers=(True, False, False, False, False, False, False, False, False, False, False, False,
                                     False, False, False, False, False, False, False, False))
-    bpy.context.scene.objects.active.data.size = 40
-    bpy.data.lamps[0].node_tree.nodes["Emission"].inputs[1].default_value = 1000000.0
-
-
-    return(0)
+    bpy.context.scene.objects.active.data.size = 40 # Resize the light.
+    bpy.data.lamps[0].node_tree.nodes["Emission"].inputs[1].default_value = 1000000.0 # Change the intensity of light
 
 
 def import_and_animate_basic_meshes():
@@ -314,7 +306,8 @@ def import_and_animate_basic_meshes():
     :param path: string - The directory with necessary files
     """
 
-    path = bpy.context.scene.content_path
+    path = bpy.context.scene.content_path # The path to the directory with content is saved in the data od scene
+                                          # as a String property
     bpy.ops.import_scene.obj(filepath=path + '\water.obj')
     set_scale_keys(target="water", keyframes=[[0.001, 1], [1, 9]])  # Set the animation keys
 
@@ -581,18 +574,17 @@ def create_shark_and_cloud():
     set_scale_keys(target="cloud", keyframes=[[0.001, 62], [1.1, 67], [1, 69]])
     bpy.data.objects["cloud"].location = (-9.18464, 39.500, 31)
     set_position_keys(target="cloud", keyframes=[[[2.409, -39.500, 31.7], 69, [5, 5]],
-                                                   [[2.409, -39.500, 33], 97, [5, 5]],
-                                                   [[2.409, -39.500, 32.3], 125, [5, 5]],
-                                                   [[2.409, -39.500, 31.5], 173, [5, 5]],
-                                                   [[2.409, -39.500, 32.3], 220, [5, 5]],
-                                                   [[2.409, -39.500, 31.4], 240, [5, 5]]])
+                                                 [[2.409, -39.500, 33], 97, [5, 5]],
+                                                 [[2.409, -39.500, 32.3], 125, [5, 5]],
+                                                 [[2.409, -39.500, 31.5], 173, [5, 5]],
+                                                 [[2.409, -39.500, 32.3], 220, [5, 5]],
+                                                 [[2.409, -39.500, 31.4], 240, [5, 5]]])
 
 
 def create_chest():
     """
-    Function creates an object with a use of macro recorded frm Maya.
-    This function shows how to use macros. Macros are actions recorded with a Maya and they can be
-    evaluated as Mel commands. Macros are a very simple way of creating simple scripts.
+    create_chest() function should use a macro recorded in application. There is no such function in Blender and many
+    actions are not included in "info" panel, so the object will be imported
     """
 
     path = bpy.context.scene.content_path
@@ -600,10 +592,11 @@ def create_chest():
     bpy.ops.import_scene.obj(filepath=path + '\chest_for_Blender.obj')
 
     chest = bpy.context.scene.objects['chest']
-    for name in ['Lock_Body', 'chest_metal_part', 'lock', 'lock001', 'lock_ring']:
-        obj = bpy.context.scene.objects[name]
-        bpy.ops.object.parent_clear(type='CLEAR_INVERSE')
+    for name in ['Lock_Body', 'chest_metal_part', 'lock', 'lock001', 'lock_ring']: # imported objects need to be
+        #parented to the "chest" object. It will be easier to set location and animate scale of those objects.
+        obj = bpy.context.scene.objects[name] # For every object: get it from scene
         obj.parent = chest
+        # The location of obj will change. We need to invert this change:
 
         # store a copy of the objects final transformation
         # so we can read from it later.
@@ -621,14 +614,19 @@ def create_chest():
 
     set_scale_keys(target='chest', keyframes=[[0.01, 27], [1, 31]])
     set_position_keys(target='chest', keyframes=[[[-3.892, 0.349, -1.533], 27],
-                                                        [[-3.892, 0.349, 0], 31],
-                                                        [[-3.892, 0.349, -1.533], 33]])
+                                                 [[-3.892, 0.349, 0], 31],
+                                                 [[-3.892, 0.349, -1.533], 33]])
 
 
 def create_and_animate_trees():
     """
     Function uses the create_palm() support function to create and animate some palm trees.
-    It was created to show how to create basic geometry objects, use instances and use modificators.
+    It was created to show how to create basic geometry objects, and use instances. In other scripts "bend" modifier is
+    used to ben the trunk of palm trees. Unfortunately the authorof this script was not able to apply this modifier
+    to multiple objects in Blender, so rotation and translation was used instead.
+    This modifiers can be applied to current active object with commands:
+    bpy.ops.object.modifier_add(type='SIMPLE_DEFORM')
+    bpy.context.object.modifiers["SimpleDeform"].deform_method = 'BEND'
     """
 
     palm = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
@@ -650,8 +648,7 @@ def create_and_animate_trees():
 
 def change_hierarchy_and_animate():
     """
-    Function modifies the hierarchy of scene and creates some final animations, that ware not possible to create earlier.
-    It also creates cameras and lights.
+    Function modifies the hierarchy of scene and creates some final animations, that ware not possible to create earlier
     """
     bpy.ops.object.empty_add(type='PLAIN_AXES')
     bpy.context.scene.objects.active.name = 'top_parent'
@@ -662,44 +659,39 @@ def change_hierarchy_and_animate():
             if obj != top_parent and obj.type not in ['LAMP', 'CAMERA']:
                 obj.parent = top_parent
 
-   # top_parent.rotation_euler[2] = -0.01*math.pi
-  #  top_parent.keyframe_insert(data_path='rotation_euler', frame = 0)
-
- #   top_parent.rotation_euler[2] =  0.1*math.pi
-#    top_parent.keyframe_insert(data_path='rotation_euler', frame = 260)
-
-    # create a new action and assign it to object
-    top_parent.animation_data_create()
-    action = bpy.data.actions.new("RotateAction")
+    # It is important that the top_parent should rotate fast at the beginning of the animation and slowly at the end.
+    # This effect can be achieved by modifying the "easing? property of keyframes.
+    #
+    top_parent.animation_data_create() # Create an animatioon data of top_parent
+    action = bpy.data.actions.new("RotateAction") # Create a new action. Actions are collections F-Curves that control
+                                                  # animation of object. We will modify the points of this curve
     top_parent.animation_data.action = action
-    # fcurve data_path
     data_path = "rotation_euler"
-    # (frame, value) for keyframe point
     times = [260, 0]
-    values = [math.radians(1.8), -math.radians(18)]        # new fcurve
-    easings = ['EASE_OUT', 'AUTO']
-    fc = action.fcurves.new(data_path, index=2)
-    # add a new keyframe point
-    fc.keyframe_points.add(count=2)
-    for kfp in fc.keyframe_points:
+    values = [math.radians(1.8), -math.radians(18)]  # new fcurve
+    easings = ['EASE_OUT', 'AUTO'] # the easing of the first keyframe should be set to ease_out and the second to auto
+    fc = action.fcurves.new(data_path, index=2) # get the f-curve of rotation_euler[2] - a "z" rotation
+
+    fc.keyframe_points.add(count=2) # add two points to the F-Curve
+    for kfp in fc.keyframe_points: # for every point of f-curve set easing
         kfp.co = (times.pop(), values.pop())
         kfp.easing = easings.pop()
 
-    bpy.ops.object.camera_add()
+    bpy.ops.object.camera_add() # create camera
     bpy.context.scene.objects.active.name = 'RenderCamera'
     camera = bpy.context.scene.objects.active
     for obj in bpy.data.cameras:
         obj.lens = 25
         obj.clip_end = 500
 
-    for area in bpy.context.screen.areas:
-        if area.type == 'VIEW_3D':
-            area.spaces[0].region_3d.view_perspective = 'CAMERA'
-
     camera.rotation_euler = (1.1775, 0.0, -1.64)
     camera.location = mathutils.Vector((-149.0, 3.569, 52.082))
 
-    bpy.ops.mesh.primitive_plane_add(view_align=False,
+    for area in bpy.context.screen.areas: # set the viewport to this camera
+        if area.type == 'VIEW_3D':
+            area.spaces[0].region_3d.view_perspective = 'CAMERA'
+
+    bpy.ops.mesh.primitive_plane_add(view_align=False, # add the plane that will be used as a camera background
                                      enter_editmode=False,
                                      location=(0, 0, 0),
                                      layers=(True, False, False, False, False,
@@ -707,81 +699,89 @@ def change_hierarchy_and_animate():
                                              False, False, False, False, False,
                                              False, False, False, False, False))
 
+
+    # The plane should be placed perpendicularly to the axis of camera.
+    # It will be placed at the position of camera. Also rotation of camera will be copied to the plane
+    # the camera will be moved then by its local "z" axis so it will be behind all of the scene objects
     camera = bpy.context.scene.objects["RenderCamera"]
     plane = bpy.data.objects["Plane"]
 
     plane.location = camera.location
     plane.rotation_euler = camera.rotation_euler
 
-    # one blender unit in x-direction
     bpy.context.scene.update()
-    vec = mathutils.Vector((0.0, 0.0, -300.0))
+    vec = mathutils.Vector((0.0, 0.0, -300.0)) # Plane will be moved by this vector: 300 units in the "Z" axis
     inv = plane.matrix_world.copy()
     inv.invert()
-    # vec aligned to local axis
     vec_rot = vec * inv
     plane.location = plane.location + vec_rot
 
-
-    plane.scale = (190, 0.75*190, 0)
+    plane.scale = (190, 0.75 * 190, 0) # Scale the plane, so it will fill the viewport
     plane.name = 'Background'
 
 
 def create_and_assign_materials():
     """
     Function creates and applies materials to the objects
-    It was created to show how to use materials.
+    It was created to show how to use materials. The camera background will also be created now.
     """
 
     path = bpy.context.scene.content_path
 
     try:
-        bg_img = bpy.data.images.load(path.replace("\\", "/") + '/bg.bmp')
+        bg_img = bpy.data.images.load(path.replace("\\", "/") + '/bg.bmp') # load the background image
     except:
         raise NameError("Cannot load image %s" % realpath)
 
-    background = bpy.data.objects['Background']
+    background = bpy.data.objects['Background'] # get the background plane from the scene
     background.data.materials.clear()
 
-    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.object.mode_set(mode='EDIT') # UVs of the beckground mesh need to be created. Edit mode need to be set
     me = background.data
-    bm = bmesh.from_edit_mesh(me)
+    bm = bmesh.from_edit_mesh(me) # We need to get the data of the background object
 
-    uv_layer = bm.loops.layers.uv.verify()
+    uv_layer = bm.loops.layers.uv.verify() #
     bm.faces.layers.tex.verify()
     for f in bm.faces:
-            luv = f.loops[0][uv_layer]
-            luv.uv = (1, 1)
-            luv = f.loops[1][uv_layer]
-            luv.uv = (0, 1)
-            luv = f.loops[2][uv_layer]
-            luv.uv = (0, 0)
-            luv = f.loops[3][uv_layer]
-            luv.uv = (1, 0)
+        luv = f.loops[0][uv_layer] # Just place every vertex in the right part of the UV space
+        luv.uv = (1, 1)
+        luv = f.loops[1][uv_layer]
+        luv.uv = (0, 1)
+        luv = f.loops[2][uv_layer]
+        luv.uv = (0, 0)
+        luv = f.loops[3][uv_layer]
+        luv.uv = (1, 0)
 
     bmesh.update_edit_mesh(me)
-    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.mode_set(mode='OBJECT') # Set the mode back to the Object mode
 
-    plane_mat = bpy.data.materials.new("Background_material")
+    # Cycles materials operate on nodes.
+
+    plane_mat = bpy.data.materials.new("Background_material") # Create the material for the background.
+    # Material that will be visible only to the camera rays and will not affect lighting and shadows can be created
+    # with a use of a "mix" node. The "is camera ray" must be used as a "fac" (mix strength) value.
+    # One of inputs of the mix node must be set to the desired emission shader with a background texture
+    # the other one should be empty, so thematerial will not affect rays if they are not camera rays
+
     plane_mat.use_nodes = True
-    plane_mat_nt = plane_mat.node_tree
+    plane_mat_nt = plane_mat.node_tree # Node tree of the material will be edited
     plane_mat_nodes = plane_mat.node_tree.nodes
-    plane_mat_surface = plane_mat_nodes['Material Output'].inputs['Surface']
-    emission = plane_mat_nodes.new("ShaderNodeEmission")
-    bgTexture = plane_mat_nodes.new("ShaderNodeTexImage")
+    plane_mat_surface = plane_mat_nodes['Material Output'].inputs['Surface'] # Surface input of the material
+    emission = plane_mat_nodes.new("ShaderNodeEmission") # Create an emission shader
+    bgTexture = plane_mat_nodes.new("ShaderNodeTexImage") # Create a texture
     bgTexture.image = bg_img
 
-    mixShaders = plane_mat_nodes.new("ShaderNodeMixShader")
-    lightPath = plane_mat_nodes.new("ShaderNodeLightPath")
+    mixShaders = plane_mat_nodes.new("ShaderNodeMixShader") # create a mix node
+    lightPath = plane_mat_nodes.new("ShaderNodeLightPath") # Create a light path node
 
-    plane_mat_nt.links.new(bgTexture.outputs['Color'], emission.inputs["Color"])
+    plane_mat_nt.links.new(bgTexture.outputs['Color'], emission.inputs["Color"]) # connect the utput of the texture
+                                                                                 # to the input of the emission node
     plane_mat_nt.links.new(lightPath.outputs["Is Camera Ray"], mixShaders.inputs["Fac"])
     plane_mat_nt.links.new(emission.outputs['Emission'], mixShaders.inputs[2])
     plane_mat_nt.links.new(mixShaders.outputs["Shader"], plane_mat_surface)
-    background.data.materials.append(plane_mat)
+    background.data.materials.append(plane_mat) # assign matrial to the background plane surface
 
-
-    land_mat = bpy.data.materials.new("Sand_material")
+    land_mat = bpy.data.materials.new("Sand_material") # with simple materials it is not necessary to use node trees
     land_mat.diffuse_color = (1, 0.74, 0.45)
 
     wood_mat = bpy.data.materials.new("Wood_material")
@@ -796,10 +796,9 @@ def create_and_assign_materials():
     water_mat = bpy.data.materials.new("Water_material")
     water_mat.use_nodes = True
 
-    water_mat_nt = water_mat.node_tree
+    water_mat_nt = water_mat.node_tree # Water is an example of a complex material that combines many shaders
     water_mat_nodes = water_mat.node_tree.nodes
     water_mat_surface = water_mat_nodes['Material Output'].inputs['Surface']
-    emission = water_mat_nodes.new("ShaderNodeEmission")
     bgTexture = water_mat_nodes.new("ShaderNodeTexImage")
     bgTexture.image = bg_img
 
@@ -816,11 +815,12 @@ def create_and_assign_materials():
     water_mat_nt.links.new(diffuseShader.outputs[0], mixShaders.inputs[2])
     water_mat_nt.links.new(mixShaders.outputs["Shader"], water_mat_surface)
 
-    for obj in bpy.context.scene.objects: # Assign materials to objects
+    for obj in bpy.context.scene.objects:  # Assign materials to objects
         if any(x in obj.name for x in ['element', 'root', 'chest']):
-            obj.data.materials.clear()
-            obj.data.materials.append(wood_mat)
-        if any(x in obj.name for x in ['shark', 'lock']):
+            if "metal" not in obj.name:
+                obj.data.materials.clear()
+                obj.data.materials.append(wood_mat)
+        if any(x in obj.name for x in ['shark', 'lock', 'cloud', 'metal']):
             obj.data.materials.clear()
             obj.data.materials.append(gray_mat)
         if "leaf" in obj.name:
@@ -833,8 +833,6 @@ def create_and_assign_materials():
             obj.data.materials.clear()
             obj.data.materials.append(land_mat)
 
-
-    return(0)
 
 #
 #
@@ -858,7 +856,7 @@ class MyColl(bpy.types.PropertyGroup):
 # Operators:
 
 class RunActions(bpy.types.Operator, ExportHelper):
-    """This appears in the tooltip of the operator and in the generated docs"""
+    """Run the sequence of actions"""
     bl_idname = "object.run_actions"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Run actions"
 
@@ -866,10 +864,10 @@ class RunActions(bpy.types.Operator, ExportHelper):
     filename_ext = ".obj"
 
     filter_glob = bpy.props.StringProperty(
-            default="*.obj",
-            options={'HIDDEN'},
-            maxlen=255,  # Max internal buffer length, longer would be clamped.
-            )
+        default="*.obj",
+        options={'HIDDEN'},
+        maxlen=255,  # Max internal buffer length, longer would be clamped.
+    )
 
     directory = bpy.props.StringProperty(subtype='DIR_PATH')
 
@@ -944,6 +942,7 @@ class ExecuteAll(bpy.types.Operator):
         bpy.ops.object.run_actions('INVOKE_DEFAULT')
         return {'FINISHED'}
 
+
 class ExecuteStepByStep(bpy.types.Operator):
     bl_idname = "object.step_by_step"
     bl_label = "File browser Operator"
@@ -1015,6 +1014,7 @@ def run(text, function):
     except:
         pass
 
+
 def collhack(scene):
     bpy.app.handlers.scene_update_pre.remove(collhack)
 
@@ -1085,4 +1085,3 @@ if __name__ == "__main__":
     my_item.name = "Zadanie"
     my_item.time = "czas"
     bpy.app.handlers.scene_update_pre.append(collhack)
-
