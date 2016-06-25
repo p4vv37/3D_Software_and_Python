@@ -3,6 +3,11 @@ Example of Python scripts for Autodesk 3D Studio Max, Autodesk Maya and Blender.
 Those scripts use Python API to create simmilar scene in: Autodesk 3D Studio Max, Autodesk Maya and Blender.
 Created to show the basics of using Python in those applications.
 
+Final result example(3Ds Max:)
+
+[![ScreenShot](https://i.vimeocdn.com/video/577899163_295x166.webp)](https://vimeo.com/172206485)
+
+
 Every script has a number of suport functions and seven major functions:
 - prepare_scene(path) - The function sets the basic parameters of the scene: time range, tangent type of keyframes and render settings.
 - import_and_animate_basic_meshes(path) - This function imports some objects and animates them. It was created to show how to import objects and present one way of creating keyframes of animation.
