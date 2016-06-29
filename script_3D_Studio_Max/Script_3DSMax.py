@@ -1045,6 +1045,7 @@ def change_hierarchy_and_animate():
         viewport = MaxPlus.ViewportManager.GetViewportByID(3)
         viewport.SetViewCamera(camera_node)
     except:
+        print "Script was not ab;e tp set view from the camera"
         pass
 
     light_id = MaxPlus.Class_ID(0x7bf61478, 0x522e4705)

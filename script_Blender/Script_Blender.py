@@ -1012,6 +1012,7 @@ def run(text, function):
     try:
         self.target_list.addItem(QtGui.QListWidgetItem(str(score)))  # Add measured time to scores list in UI
     except:
+        print("Some problem with UI occurred")
         pass
 
 
@@ -1021,6 +1022,7 @@ def collhack(scene):
     try:
         scene.col.clear()
     except:
+        print("Problem with clearing of columns occured")
         pass
     i = 1
     for new_item in bpy.context.scene.actions_records:

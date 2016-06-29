@@ -1071,6 +1071,7 @@ class DataTable:
         try:
             self.target_list.addItem(QtGui.QListWidgetItem(str(score)))  # Add measured time to scores list in UI
         except:
+            print("Some problem with UI occurred")
             pass
 
     def save(self):
