@@ -5,6 +5,8 @@
  - www.pkowalski.com
  - www.behance.net/pkowalski
 
+ I cannot test this version of script at the moment. It was updated, just as others, but not tested yet.
+
 ## How to use:
 
  To run the script execute:
