@@ -38,8 +38,19 @@ import math
 import os.path
 import ctypes
 
-from PySide.QtCore import SIGNAL
-from PySide import QtGui, QtCore  # PySide is recommended in documentation of 3Ds Max Python API
+try:
+    # Max2016 - PySide & Qt4
+    from PySide.QtCore import Qt, SIGNAL
+    from PySide.QtGui import (QMessageBox, QListWidgetItem, QFileDialog, QDialog, QWidget, QGridLayout, QLabel,
+                              QPushButton, QListWidget, QDesktopWidget)
+    from shiboken import wrapInstance
+except ImportError:
+    # Max2017+ - PySide2 & Qt5
+    from PySide2.QtCore import Qt, SIGNAL
+    from shiboken2 import wrapInstance
+    from PySide2.QtWidgets import (QMessageBox, QListWidgetItem, QFileDialog, QDialog, QWidget, QGridLayout, QLabel,
+                                   QPushButton, QListWidget, QDesktopWidget)
+
 import MaxPlus  # This module contains all the classes and functions of the 3ds Max Python API
 
 FPS = MaxPlus.Core.EvalMAXScript('frameRate').GetInt()
@@ -1282,7 +1293,7 @@ class DataTable:
         self.scores_list.append(score)  # append the
 
         try:
-            self.target_list.addItem(QtGui.QListWidgetItem(str(score)))  # Add measured time to scores list in UI
+            self.target_list.addItem(QListWidgetItem(str(score)))  # Add measured time to scores list in UI
         except:
             pass
 
@@ -1298,7 +1309,7 @@ class DataTable:
             scores.append(self.target_list.item(i).text())
             i += 1
 
-        path = QtGui.QFileDialog.getExistingDirectory(None, 'Select folder to save scores_3DSMax.txt')
+        path = QFileDialog.getExistingDirectory(None, 'Select folder to save scores_3DSMax.txt')
         with open(path + '/scores_3DSMax.txt', 'w') as file_:
             for score in scores:
                 file_.write(score + '\n')
@@ -1314,7 +1325,7 @@ class DataTable:
         pass
 
 
-class GUI(QtGui.QWidget):
+class GUI(QWidget):
     """
     GUI object. Standard way of using PySide.
     PySide is recommended in documentation of 3Ds Max Python API
@@ -1334,16 +1345,16 @@ class GUI(QtGui.QWidget):
 
         self.setWindowTitle('Skrypt - 3Ds Max')  # Set the title of window
 
-        grid = QtGui.QGridLayout()  # Create a grid layout
-        grid_internal = QtGui.QGridLayout()
-        self.label_info = QtGui.QLabel('Launch the script with `start` button')  # Create a label GUI element
-        btn_step = QtGui.QPushButton('Step by step')  # Create a button
-        btn_start = QtGui.QPushButton('Run all steps')
+        grid = QGridLayout()  # Create a grid layout
+        grid_internal = QGridLayout()
+        self.label_info = QLabel('Launch the script with `start` button')  # Create a label GUI element
+        btn_step = QPushButton('Step by step')  # Create a button
+        btn_start = QPushButton('Run all steps')
         self.connect(btn_start, SIGNAL("clicked()"), self.fn_no_steps)  # Connect button to function
         self.connect(btn_step, SIGNAL("clicked()"), self.fn_step)
-        self.times_list = QtGui.QListWidget(self)  # Create a list widget
-        btn_save = QtGui.QPushButton('Save scores')
-        btn_reset = QtGui.QPushButton('Clear the scene')
+        self.times_list = QListWidget(self)  # Create a list widget
+        btn_save = QPushButton('Save scores')
+        btn_reset = QPushButton('Clear the scene')
 
         grid.addWidget(self.label_info, 0, 0)  # Add the widget to the layout
 
@@ -1371,7 +1382,7 @@ class GUI(QtGui.QWidget):
         """
 
         qr = self.frameGeometry()
-        cp = QtGui.QDesktopWidget().availableGeometry().center()
+        cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
@@ -1401,7 +1412,7 @@ class GUI(QtGui.QWidget):
         while not os.path.isfile(self.path + '/land.obj'):  # checks if the folder includes necessary file.
             # If not, then shows the QFileDialog that makes it possible to select the right one.
 
-            self.path = QtGui.QFileDialog.getExistingDirectory(self,
+            self.path = QFileDialog.getExistingDirectory(self,
                                                                'Select the folder of additional files (named "common")')
             print self.path
 
@@ -1431,9 +1442,9 @@ class GUI(QtGui.QWidget):
 
 
 def main():
-    app = QtGui.QApplication.instance()  # As suggested in 3Ds Max Python API documentation
+    app = QApplication.instance()  # As suggested in 3Ds Max Python API documentation
     if not app:
-        app = QtGui.QApplication([])
+        app = QApplication([])
     gui = GUI()
     try:
         import sys
