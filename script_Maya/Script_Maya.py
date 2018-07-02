@@ -1,8 +1,8 @@
-﻿# __author__ = 'Paweł Kowalski'
+﻿# __author__ = 'Pawel Kowalski'
 #
 # This script was created to demonstrate the use of Python in Autodesk Maya
 #
-# Copyright (C) Paweł Kowalski
+# Copyright (C) Pawel Kowalski
 # www.pkowalski.com
 # www.behance.net/pkowalski
 #
@@ -32,24 +32,201 @@
 #
 
 
-from PySide import QtCore
-from PySide import QtGui
-from PySide.QtCore import SIGNAL
+import glob
+import math
+import os
+import random
+import time
 
-from shiboken import wrapInstance
-
-import maya.cmds as cmds
 import maya.OpenMayaUI as omui
 import maya.api.OpenMaya as om
+import maya.cmds as cmds
 import maya.mel as mel
+import pymel.core as pm
+
+try:
+    # Maya2016 - PySide & Qt4
+    from PySide.QtCore import Qt, SIGNAL
+    from PySide.QtGui import (QMessageBox, QListWidgetItem, QFileDialog, QDialog, QWidget, QGridLayout, QLabel,
+                              QPushButton, QListWidget, QDesktopWidget)
+    from shiboken import wrapInstance
+except ImportError:
+    # Maya2017+ - PySide2 & Qt5
+    from PySide2.QtCore import Qt, SIGNAL
+    from shiboken2 import wrapInstance
+    from PySide2.QtWidgets import (QMessageBox, QListWidgetItem, QFileDialog, QDialog, QWidget, QGridLayout, QLabel,
+                                   QPushButton, QListWidget, QDesktopWidget)
 
 
-import os
-import time
-import math
-import random
-import glob
-from pymel.all import mel
+class DataTable(object):
+    """
+    Object stores the parameters of currently running instance of script. It also runs the functions
+    and makes callbacks to UI elements easier.
+    """
+
+    target_list = None
+    target_label = None
+    scores_list = []
+    next_step = 0  # the step that should be performed next (when running the script step-by-step)
+    ignore_steps = False  # if ignore_steps is false the animation is step by step
+
+    def __init__(self):
+        pass
+
+    def run(self, text, function, path=None):
+        """
+        Run the script: create the scene. It can run step-by-step and stop after every part or run every function
+        one after another. The function also measures an execution time of commands and updates the UI elements.
+
+        :param text: string - Name of the current step that will be displayed in the UI and scores table.
+        :param function: function() - Function that will be run.
+        :param path: string - Additional parameter: path that can be passed to the function as parameter:
+                              required by some functions.
+        """
+
+        self.target_label.setText(text)  # Update the label of UI
+        if path is None:  # If no path was passed as argument, then do not pass this variable to target function
+            ts = time.time()  # Start measuring time
+            function()  # Execute the function passed as an argument
+        else:
+            ts = time.time()
+            function(path)  # if path was passed then pass it to the target function
+        te = time.time()  # Record the ending time of command
+        score = [text, te - ts]  # Measure the interval
+        self.scores_list.append(score)  # append the
+
+        self.target_list.addItem(QListWidgetItem(str(score)))  # Add measured time to scores list in UI
+
+    def save(self):
+        """
+        Function saves the execution times of commands to the file.
+        """
+
+        i = 0
+        scores = []
+
+        while i < self.target_list.count():
+            scores.append(self.target_list.item(i).text())
+            i += 1
+
+        path = QFileDialog.getExistingDirectory(None, 'Select a folder to save the scores_Maya.txt file',
+                                                'D:/')
+        with open(path + '/scores_Maya.txt', 'w') as file_:
+            for score in scores:
+                file_.write(score + '\n')
+
+    # noinspection PyMethodMayBeStatic,PyMethodMayBeStatic
+    def reset(self):
+        """
+        Function resets the file and parameters of this object to the initial state.
+        """
+
+        cmds.file(newFile=1, force=1)  # Force creation of a new scene
+        pass
+
+
+class GUI(QDialog):
+    path = "C:/"
+
+    def __init__(self):
+
+        # set maya main window as parent or it will disappear quickly:
+        main_window_ptr = omui.MQtUtil.mainWindow()
+        maya_main_window = wrapInstance(long(main_window_ptr), QWidget)
+
+        super(GUI, self).__init__(maya_main_window)  # Initialize with maya_main_window as a parent
+
+        self.resize(250, 150)  # Set the size of window
+        self.center()
+        self.setWindowTitle('Script - Maya')  # Set the title of window
+        self.setWindowFlags(Qt.Tool)  # The tool window will always be kept on top of parent (maya_main_window)
+
+        # Delete UI on close to avoid winEvent error
+        # self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+
+        grid = QGridLayout()  # Create a grid layout
+        grid_internal = QGridLayout()
+        self.label_info = QLabel('Launch the script with `start` button')  # Create a label GUI element
+        btn_step = QPushButton('Step by step')  # Create a button
+        btn_start = QPushButton('Run all steps')
+        self.connect(btn_start, SIGNAL("clicked()"), self.fn_no_steps)  # Connect button to function
+        self.connect(btn_step, SIGNAL("clicked()"), self.fn_step)
+        self.times_list = QListWidget(self)  # Create a list widget
+        btn_save = QPushButton('Save scores')
+        btn_reset = QPushButton('Clear the scene')
+
+        grid.addWidget(self.label_info, 0, 0)  # Add the widget to the layout
+
+        grid_internal.addWidget(btn_step, 0, 0)
+        grid_internal.addWidget(btn_start, 0, 1)
+
+        grid.addLayout(grid_internal, 1, 0)
+        grid.addWidget(self.times_list, 2, 0)
+        grid.addWidget(btn_save, 3, 0)
+        grid.addWidget(btn_reset, 4, 0)
+
+        self.data_table = DataTable()
+        self.data_table.target_list = self.times_list
+        self.data_table.target_label = self.label_info
+
+        self.connect(btn_reset, SIGNAL("clicked()"), self.data_table.reset)
+        self.connect(btn_save, SIGNAL("clicked()"), self.data_table.save)
+
+        self.setLayout(grid)  # Set the layout of the window
+
+    def center(self):
+        """
+        Function places window on the center of the screen. It is not necessary for script to run.
+        """
+
+        qr = self.frameGeometry()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
+
+    def fn_step(self):
+        """
+        Run function step-by-step: make one step.
+        """
+
+        self.data_table.ignore_steps = False
+        self.fn_start()
+
+    def fn_no_steps(self):
+        """
+        Run function: make all the steps.
+        """
+
+        self.data_table.ignore_steps = True
+        self.fn_start()
+
+    def fn_start(self):
+        """
+        Function runs other functions in a right order and with right parameters.
+        """
+        while not os.path.isfile(self.path + '/land.obj'):  # checks if the folder includes necessary file.
+            # If not, then shows the QFileDialog that makes it possible to select the right one.
+
+            self.path = QFileDialog.getExistingDirectory(self, 'Select the folder of additional files (named "common")')
+            print self.path
+
+        functions_with_names = [["Setup the scene", prepare_scene, self.path],
+                                ["Import basic objects", import_and_animate_basic_meshes, self.path],
+                                ["Create a shark finn and a cloud", create_shark_and_cloud, None],
+                                ["Create a chest with Macro script", create_chest, None],
+                                ["Create and animate trees", create_and_animate_trees, None],
+                                ["Fix objects hierarchy, finish the animation", change_hierarchy_and_animate, None],
+                                ["Create and assign materials", create_and_assign_materials, None]]
+
+        if self.data_table.ignore_steps:
+            for action_num in xrange(self.data_table.next_step, len(functions_with_names)):
+                line = functions_with_names[action_num]
+                self.data_table.run(text=line[0], function=line[1], path=line[2])
+        else:
+            action_num = self.data_table.next_step
+            self.data_table.next_step += 1
+            line = functions_with_names[action_num]
+            self.data_table.run(text=line[0], function=line[1], path=line[2])
 
 
 def frange(start, end, jump):
@@ -70,7 +247,7 @@ def set_scale_keys(target, keyframes):
     """
     Function animates the scale of given object by creating the given keyframes.
 
-    :param obj:  String - Name of an object which scale will be animated
+    :param target:  String - Name of an object which scale will be animated
     :param keyframes: Python list - Keyframes that will be created: [[int time, float scale (1 = 100%),] ...]
     """
 
@@ -87,14 +264,14 @@ def leafs_rotations(number_of_leafs):
     Leafs should be placed more or less evenly around the trunk but appear to be placed randomly.
     The leafs should not be placed too close, because they would overlap.
 
-    :param num: int - Number of leafs
+    :param number_of_leafs: int - Number of leafs
     :return: Python list - List of angles of leafs around the palm tree
     """
 
     x = -180  # Leafs are placed around the trunk, so the range is 360 deg. x = 0, y = 2*pi would also be ok.
     y = 180
     angles = []
-    jump = (y - x) / float(number_of_leafs)  # Devide the range by the number of leafs and create an array
+    jump = (y - x) / float(number_of_leafs)  # Divide the range by the number of leafs and create an array
 
     while x < y:
         random.seed()
@@ -108,7 +285,7 @@ def set_position_keys(target, keyframes):
     """
     Function animates the position of given object by creating the given keyframes.
 
-    :param obj:  String - Name of an object which scale will be animated
+    :param target:  String - Name of an object which scale will be animated
     :param keyframes: Python list - Keyframes that will be created: [[int time, [float x, float y, float z]], ...]
     """
 
@@ -119,7 +296,6 @@ def set_position_keys(target, keyframes):
 
 
 def create_object(verts_pos, face_verts):
-
     """
     Function creates an object with mesh given by vertice and face data.
 
@@ -128,7 +304,7 @@ def create_object(verts_pos, face_verts):
     """
 
     shark_mesh = om.MObject()
-    points = om.MFloatPointArray() # An array that is storing positions od vertices. Do not include id of vertices
+    points = om.MFloatPointArray()  # An array that is storing positions od vertices. Do not include id of vertices
 
     for vert in verts_pos:  # add every point to Maya float points array
         p = om.MFloatPoint(vert[0], vert[2], -vert[1])
@@ -138,8 +314,8 @@ def create_object(verts_pos, face_verts):
     face_counts = om.MIntArray()  # an array for total number of vertices per face
     for verts in face_verts:
         # In Maya mesh is created on a base of two arrays: list of vertice numbers and list of numbers of vertices
-        # of faces. Vertice numbers from the first list are not grouped by faces, this is just a one dimmension array.
-        # Based on this list only it would be impossible to recreate mesh, becouse number of vertices in faces may vary
+        # of faces. Vertice numbers from the first list are not grouped by faces, this is just a one dimension array.
+        # Based on this list only it would be impossible to recreate mesh, because number of vertices in faces may vary
         # (in this example every face have 3 vertices, but this is not obligatory).
         #  The second array stores the number of vertices of faces. From this list Mata gets a number of vertices of a
         # face, let's call it N, then assigns next N vertices to this face. The process is repeated for every face.
@@ -152,29 +328,29 @@ def create_object(verts_pos, face_verts):
     mesh_fs.create(points, face_counts, face_connects, parent=shark_mesh)
     mesh_fs.updateSurface()
     node_name = mesh_fs.name()
-    cmds.polySoftEdge(node_name, a=30, ch=1) # Automatically soften the edges of the mesh
+    cmds.polySoftEdge(node_name, a=30, ch=1)  # Automatically soften the edges of the mesh
 
     # assign new mesh to default shading group
     cmds.sets(node_name, e=True, fe='initialShadingGroup')
-    return cmds.listRelatives(node_name, fullPath=True, parent=True) # node name stores a name of Shape node.
+    return cmds.listRelatives(node_name, fullPath=True, parent=True)  # node name stores a name of Shape node.
     #  Most functions need a Transform node. Ths line returns it.
 
 
 def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim_end):
     """
     Function creates a single palm tree.
-    This function was created to show how to create basic geometry objects, use instances and use modificators.
+    This function was created to show how to create basic geometry objects, use instances and use modifications.
 
     :param diameter: float - inner diameter of pine
     :param segs_num: int - number of segments of the pine
     :param leafs_num: int - number of leafs
     :param bending: float - how much bended the pine is
-    :param id: int - ID of the tree
+    :param id_num: int - ID of the tree
     :param anim_start: int - Starting frame of the tree animation
     :param anim_end: int - Ending frame of the tree animation
     """
 
-    keyframe_interval = (anim_end - anim_start) / (segs_num + 1.0)  # interval of scale keframes of the pine segments
+    keyframe_interval = (anim_end - anim_start) / (segs_num + 1.0)  # interval of scale keyframes of the pine segments
 
     anim_start /= 25.0  # Convert frames to the time
     anim_end /= 25.0  # Need to convert now, because the number of segments is probably
@@ -186,13 +362,14 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
 
     keyframe_list.reverse()  # Because the pop() will be used and the first frame should be the smallest number
 
-    source_segment = 'segment_orginal' # Create an object that will be instanced
-    cmds.polyCone(r=diameter/2, h=-diameter * 8, n=source_segment, subdivisionsY=5) # Create a cone. Cone will have a
+    source_segment = 'segment_original'  # Create an object that will be instanced
+    cmds.polyCone(r=diameter / 2, h=-diameter * 8, n=source_segment, subdivisionsY=5)  # Create a cone. Cone will have a
     # sharp tip, that will be removed later
-    cmds.polyDelFacet(source_segment + '.f[20:79]', source_segment + '.f[81:100]') # delete polgons of sharp end of cone
-    cmds.polyNormal(name=source_segment, normalMode=0) # Reverse face normals.
+    cmds.polyDelFacet(source_segment + '.f[20:79]',
+                      source_segment + '.f[81:100]')  # delete polygons of sharp end of cone
+    cmds.polyNormal(name=source_segment, normalMode=0)  # Reverse face normals.
     #  Normals are reversed, because "h" parameter is a negative number.
-    bbox = cmds.exactWorldBoundingBox(source_segment) # The pivot is placed currently at the end of sharp tip of
+    bbox = cmds.exactWorldBoundingBox(source_segment)  # The pivot is placed currently at the end of sharp tip of
     # the cone that had been removed. Pivot will be placed at the bottom of the objects now with a use of
     # its bounding box parameters.
     bottom_of_mesh = [(bbox[0] + bbox[3]) / 2, bbox[1], (bbox[2] + bbox[5]) / 2]
@@ -204,26 +381,25 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
         # Create segments of pine of the palm tree
 
         current_segment_name = 'Palm_element_' + str(id_num) + '_' + str(i)
-        cmds.instance('segment_orginal', n=current_segment_name)  # Create an instance with segment geometry
+        cmds.instance('segment_original', n=current_segment_name)  # Create an instance with segment geometry
         cmds.move(diameter * i, current_segment_name, moveY=True, absolute=True)
         # Every node should be diameter higher then last one
 
         # The nodes at the top of the tree should be smaller then those at the bottom:
         cmds.scale(1.0 - (i / (segs_num * 4.0)), 1.0 - (i / (segs_num * 4.0)), 1, current_segment_name)
-        segments_tab.append(current_segment_name)  # Append to the nodes table
+        segments_tab.append(pm.PyNode(current_segment_name))  # Append to the nodes table
         anim_start_frame = keyframe_list.pop()  # Pop one time from the keyframe times list
         set_scale_keys(target=current_segment_name, keyframes=[[0.001, str(anim_start_frame) + 'sec'],
                                                                [1.2, str(anim_start_frame + keyframe_interval) + 'sec'],
-                                                               [1, str(anim_start_frame + 2*keyframe_interval) + 'sec']])
+                                                               [1,
+                                                                str(anim_start_frame + 2 * keyframe_interval) + 'sec']])
 
-    cmds.delete(source_segment) # Delete the source object, instance will not be removed
-    for current_segment_name in segments_tab:
-        # Parent every segment to the root node. If there is no root node, then this segment will be a root.
-        try:
-            cmds.parent(current_segment_name, root,
-                        relative=True)
-        except:  # If the function failed then this is a first node of the tree and will not have any parent
-            root = current_segment_name
+    cmds.delete(source_segment)  # Delete the source object, instance will not be removed
+    root = segments_tab[0]
+    for current_segment in segments_tab[1:]:
+        # Parent every segment to the root node.
+        pm.parent(current_segment, root, relative=True)  # Using PyMel here to make managing ocjects easier
+        # (long object names vchange after parenting, PyMel manages them better)
 
     # The leaf will be created from saved vertex data in a similar way to cloud.
 
@@ -256,38 +432,39 @@ def create_palm(diameter, segs_num, leafs_num, bending, id_num, anim_start, anim
                   [19, 23, 35], [22, 24, 36], [17, 14, 26], [27, 15, 12], [26, 14, 15], [31, 7, 10], [25, 13, 17],
                   [34, 10, 18], [13, 16, 38], [12, 39, 38]]
 
-    leaf_source_name = create_object(verts_list, faces_list) # Create the leaf object that will be instanced
+    leaf_source_name = create_object(verts_list, faces_list)  # Create the leaf object that will be instanced
     cmds.rename(leaf_source_name, "leaf")
 
     anim_start_frame = keyframe_list.pop()
 
-    last_node = segments_tab[-1] # Get the last element of the palm tree. It will be a parent of leafs.
+    last_node_name = segments_tab[-1].longName()  # Get the last element of the palm tree. It will be a parent of leafs.
+    i = 0
     for rot_z in leafs_rotations(number_of_leafs=leafs_num):  # Leafs should be distributed around the pine.
         current_leaf_name = "leaf_" + str(id_num) + '_' + str(i)
         cmds.instance("leaf", n=current_leaf_name)
-        cmds.move(diameter*4, current_leaf_name, moveY=True, relative=True)
+        cmds.move(diameter * 4, current_leaf_name, moveY=True, relative=True)
 
         cmds.rotate(random.uniform(-math.pi / 15, math.pi / 15), rot_z, random.uniform(-math.pi / 8, math.pi / 10),
                     current_leaf_name)
         set_scale_keys(target=current_leaf_name,
-                       keyframes=[[0.001, str(anim_start_frame)+"sec"],
-                                  [1, str(anim_start_frame + keyframe_interval)+"sec"]])
-        cmds.parent(current_leaf_name, last_node, relative = True)
+                       keyframes=[[0.001, str(anim_start_frame) + "sec"],
+                                  [1, str(anim_start_frame + keyframe_interval) + "sec"]])
         cmds.scale(0.9, 0.9, 0.9, current_leaf_name)
+        cmds.parent(current_leaf_name, last_node_name, relative=True)
         i += 1
 
     cmds.delete("leaf")
 
     # Now the bend modifier will be applied to the source element of a palm tree. Other elements wil be also affected
-    # becouse they are parented to it.
-    cmds.nonLinear(root, type='bend', after = True, curvature=2*bending, lowBound=0)
+    # because they are parented to it.
+    cmds.nonLinear(root.longName(), type='bend', after=True, curvature=2 * bending, lowBound=0)
 
     # Rescale the handle of a modifier, it will look nicer
     for name in cmds.ls():
         if name.endswith('Handle'):
-            cmds.scale(60,60,60,name)
+            cmds.scale(60, 60, 60, name)
 
-    return root
+    return root.longName()
 
 
 def prepare_scene(path):
@@ -301,47 +478,45 @@ def prepare_scene(path):
 
     cmds.autoKeyframe(state=False)  # Make sure, that the AutoKey button is disabled
 
-    plugins_dirs = mel.getenv("MAYA_PLUG_IN_PATH") # Mental Ray plugin is necessaryfor this script to run propperly.
-    # Next lines check if the plugin is avaible and installs it or displays an allert window.
-    # The plugins are accualy files placed in "MAYA_PLUG_IN_PATH" directories, so this script gets those paths
-    # and checks if there is a mental ray plugin file.
+    # WARNING: Mental Ray was discontinued
+    # http://www.cgchannel.com/2017/11/nvidia-discontinues-mental-ray/
+    # Rendering of an image will be skipped if this plugin is not avaliable.
 
-    for plugins_dir in plugins_dirs.split(';'):
-        for filename in glob.glob(plugins_dir + '/*'): # For every filename in every directory of MAYA_PLUG_IN_PATH
-            if 'Mayatomr.mll' in filename: # if there is a mental ray plugin file then make sure it is loaded
-                if not cmds.pluginInfo('Mayatomr', query=True, loaded=True):
-                    cmds.loadPlugin('Mayatomr', quiet=True)
-                cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string') # Set the render engine to MR
-                # Next lines are a workaround for some bugs. The first one is that the render settings window has to be
-                # opened before setting attributes of the render. If it would not be, thhen Maya would display an error
-                # saying that such options do not exist.
-                # The second bug is that after running this scrpt the window was blank and it was impossible to set
-                # parameters. This is a common bug and it can be repaired by closing this window with
-                # cmds.deleteUI('unifiedRenderGlobalsWindow') command
+    try:
+        cmds.loadPlugin('Mayatomr')
+    except RuntimeError:
+        pass
 
-                cmds.RenderGlobalsWindow()
-                cmds.refresh(f=True)
-                cmds.deleteUI('unifiedRenderGlobalsWindow')
-                cmds.setAttr('miDefaultOptions.finalGather', 1)
-                cmds.setAttr('miDefaultOptions.miSamplesQualityR', 1)
-                cmds.setAttr('miDefaultOptions.lightImportanceSamplingQuality', 2)
-                cmds.setAttr('miDefaultOptions.finalGather', 1)
-                break
-        else:
-            continue
-        break
+    if cmds.pluginInfo('Mayatomr', q=True, l=True):
+        cmds.setAttr('defaultRenderGlobals.ren', 'mentalRay', type='string')  # Set the render engine to MR
+        # Next lines are a workaround for some bugs. The first one is that the render settings window has to be
+        # opened before setting attributes of the render. If it would not be, then Maya would display an error
+        # saying that such options do not exist.
+        # The second bug is that after running this script the window was blank and it was impossible to set
+        # parameters. This is a common bug and it can be repaired by closing this window with
+        # cmds.deleteUI('unifiedRenderGlobalsWindow') command
+
+        cmds.RenderGlobalsWindow()
+        cmds.refresh(f=True)
+        cmds.deleteUI('unifiedRenderGlobalsWindow')
+        cmds.setAttr('miDefaultOptions.finalGather', 1)
+        cmds.setAttr('miDefaultOptions.miSamplesQualityR', 1)
+        cmds.setAttr('miDefaultOptions.lightImportanceSamplingQuality', 2)
+        cmds.setAttr('miDefaultOptions.finalGather', 1)
     else:
-        print("Mental Ray plugin is not avaible. It can be found on the Autodesk website: ",
-              "https://knowledge.autodesk.com/support/maya/downloads/caas/downloads/content/",
-              "mental-ray-plugin-for-maya-2016.html")
-        alert_box =  QtGui.QMessageBox()
-        alert_box.setText("Mental Ray plugin is not avaible. It can be found on the Autodesk website: " +
-              "https://knowledge.autodesk.com/support/maya/downloads/caas/downloads/content/" +
-              "mental-ray-plugin-for-maya-2016.html")
+        msg = "Mental Ray plugin is not available. " \
+              "WARNING: Mental Ray was discontinued and may not be avaliable anymore." \
+              "It can be found on the Autodesk website: " \
+              "https://knowledge.autodesk.com/support/maya/downloads/caas/downloads/content/" \
+              "mental-ray-plugin-for-maya-2016.html" \
+              "\n\nPart of script that uses Mental Ray will be skipped."
+        print(msg)
+        alert_box = QMessageBox()
+        alert_box.setText(msg)
         alert_box.exec_()
 
     cam = cmds.camera(name="RenderCamera", focusDistance=35, position=[-224.354, 79.508, 3.569],
-                      rotation=[-19.999,-90,0])  # create camera to set background (imageplane)
+                      rotation=[-19.999, -90, 0])  # create camera to set background (imageplane)
     # Set Image Plane for camera background
     cmds.imagePlane(camera=cmds.ls(cam)[1], fileName=(path.replace("\\", "/") + '/bg.bmp'))
     cmds.setAttr("imagePlaneShape1.depth", 400)
@@ -841,11 +1016,11 @@ doDelete;
 
     '''
 
-    mel.eval(recorded_macro)
+    pm.mel.eval(recorded_macro)
     set_scale_keys(target='CHEST', keyframes=[[0.001, 57], [0.1, 63]])
     set_position_keys(target='CHEST', keyframes=[[[-3.892, 0.764, 0.349], 57, [1, 1]],
-                                               [[-3.892, 2.297, 0.349], 61, [1, 1]],
-                                               [[-3.892, 0.764, 0.349], 63, [1, 1]]])
+                                                 [[-3.892, 2.297, 0.349], 61, [1, 1]],
+                                                 [[-3.892, 0.764, 0.349], 63, [1, 1]]])
     cmds.rotate('CHEST')
     cmds.move(-3.941, -1.533, 0.061, absolute=True)
     cmds.parent('CHEST', 'land')
@@ -854,7 +1029,7 @@ doDelete;
 def create_and_animate_trees():
     """
     Function uses the create_palm() support function to create and animate some palm trees.
-    It was created to show how to create basic geometry objects, use instances and use modificators.
+    It was created to show how to create basic geometry objects, use instances and use modifications.
     """
 
     palm1 = create_palm(diameter=1.3, segs_num=20, leafs_num=9, bending=34, id_num=1, anim_start=11, anim_end=26)
@@ -862,18 +1037,18 @@ def create_and_animate_trees():
     palm3 = create_palm(diameter=1.1, segs_num=18, leafs_num=9, bending=24, id_num=3, anim_start=20, anim_end=35)
     palm4 = create_palm(diameter=1.1, segs_num=24, leafs_num=9, bending=24, id_num=4, anim_start=25, anim_end=40)
 
-    cmds.currentTime(55) # The removal of history had strange effect when it was applied before tree animation
+    cmds.currentTime(55)  # The removal of history had strange effect when it was applied before tree animation
     # Next line is intended to avoid a bug. If the history has to be deleted with a cmds.delete function. If it
-    # would not be modified then the bend modifictor would have to be moved wit an object or it would affect an object
+    # would not be modified then the bend modificator would have to be moved wit an object or it would affect an object
     # in different ways then desired during a changes in its position. The problem is, that during that an evaluation
-    # of commands may take some time and the removing of history resulted in not deformed mesh or a partialy
-    # deformed mesh. This is why cmds.refresh() ommand was used.
+    # of commands may take some time and the removing of history resulted in not deformed mesh or a partially
+    # deformed mesh. This is why cmds.refresh() command was used.
     cmds.refresh(f=True)
 
     cmds.delete(palm1, ch=True)
     cmds.rotate(0.197, 105, 0.558, palm1, absolute=True)  # Rotate the palm
     cmds.move(-8.5, -4.538, 18.1, palm1, absolute=True)  # Position the palm
-    cmds.parent(palm1, 'land', relative=True) # Rename it
+    cmds.parent(palm1, 'land', relative=True)  # Rename it
 
     cmds.delete(palm2, ch=True)
     cmds.rotate(-16.935, 74.246, -23.907, palm2)
@@ -891,17 +1066,14 @@ def create_and_animate_trees():
     cmds.parent(palm4, 'land', relative=True)
 
 
-
-
-
 def change_hierarchy_and_animate():
     """
     Function modifies the hierarchy of scene and creates some final animations, that ware not possible to create earlier.
     It also creates cameras and lights.
     """
-    cmds.lookThru( 'perspView', 'RenderCamera1') # Change the perspective viewport to the render camera.
+    cmds.lookThru('perspView', 'RenderCamera1')  # Change the perspective viewport to the render camera.
 
-    top_locator = cmds.spaceLocator() # Parent for all the elemements that will rotate together
+    top_locator = cmds.spaceLocator()  # Parent for all the elements that will rotate together
     objects_list = ['land', 'water', 'cloud', 'shark', ]
 
     for obj in objects_list:
@@ -910,12 +1082,13 @@ def change_hierarchy_and_animate():
     cmds.setKeyframe(top_locator, attribute='rotateY', v=20, time=260, itt="plateau", ott="plateau")
     cmds.setKeyframe(top_locator, attribute='rotateY', v=0, time=0, itt="linear", ott="linear")
 
-    dome_light = cmds.polySphere(r=500) # This sphere is a substitute of a skylight in 3Ds Max
-    cmds.polyNormal(dome_light, normalMode=0) # The normals have to point to inside
-
-    cmds.setAttr(dome_light[0]+".miDeriveFromMaya", 0) # Enable changes in object render settings
-    cmds.setAttr(dome_light[0]+".miVisible", 0) # This object will be invisible to camera
-    cmds.setAttr(dome_light[0]+".miShadow", 0) # And will not affect shadows
+    dome_light = cmds.polySphere(r=500)  # This sphere is a substitute of a skylight in 3Ds Max
+    cmds.polyNormal(dome_light, normalMode=0)  # The normals have to point to inside
+    if cmds.pluginInfo('Mayatomr', q=True, l=True):
+        # Only if Mental Ray is loaded:
+        cmds.setAttr(dome_light[0] + ".miDeriveFromMaya", 0)  # Enable changes in object render settings
+        cmds.setAttr(dome_light[0] + ".miVisible", 0)  # This object will be invisible to camera
+        cmds.setAttr(dome_light[0] + ".miShadow", 0)  # And will not affect shadows
     cmds.rename(dome_light[0], "dome_light")
 
     area_light = cmds.shadingNode('areaLight', asLight=True)
@@ -923,11 +1096,13 @@ def change_hierarchy_and_animate():
     cmds.move(-230.59, 178.425, 99.192, area_light)
     cmds.rotate(0, -68.929, -37.987, area_light)
 
-    cmds.setAttr(area_light+".intensity", 120000.0)
-    cmds.setAttr(area_light+".areaLight", 1)
-    cmds.setAttr(area_light+".areaType", 1)
-    cmds.setAttr(area_light+".decayRate", 2)
-    cmds.setAttr(area_light+".areaHiSamples", 64)
+    cmds.setAttr(area_light + ".intensity", 120000.0)
+    if cmds.pluginInfo('Mayatomr', q=True, l=True):
+        # Only if Mental Ray is loaded:
+        cmds.setAttr(area_light + ".areaLight", 1)
+        cmds.setAttr(area_light + ".areaType", 1)
+        cmds.setAttr(area_light + ".decayRate", 2)
+        cmds.setAttr(area_light + ".areaHiSamples", 64)
 
 
 def create_and_assign_materials():
@@ -937,81 +1112,84 @@ def create_and_assign_materials():
     """
 
     light_dome_mat = cmds.shadingNode("surfaceShader", asShader=True)
-    cmds.setAttr(light_dome_mat+".outColorR", 0.15)
-    cmds.setAttr(light_dome_mat+".outColorG", 0.15)
-    cmds.setAttr(light_dome_mat+".outColorB", 0.15)
-    light_dome_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
-    cmds.connectAttr('%s.outColor' %light_dome_mat ,'%s.surfaceShader' %light_dome_sg)
+    cmds.setAttr(light_dome_mat + ".outColorR", 0.15)
+    cmds.setAttr(light_dome_mat + ".outColorG", 0.15)
+    cmds.setAttr(light_dome_mat + ".outColorB", 0.15)
+    light_dome_sg = cmds.sets(renderable=True, noSurfaceShader=True, empty=True)
+    cmds.connectAttr('%s.outColor' % light_dome_mat, '%s.surfaceShader' % light_dome_sg)
     cmds.rename(light_dome_mat, 'light_dome_material')
 
     land_mat = cmds.shadingNode("lambert", asShader=True)
-    cmds.setAttr(land_mat+".colorR", 1.0)
-    cmds.setAttr(land_mat+".colorG", 0.75)
-    cmds.setAttr(land_mat+".colorB", 0.45)
-    land_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
-    cmds.connectAttr('%s.outColor' %land_mat ,'%s.surfaceShader' %land_sg)
+    cmds.setAttr(land_mat + ".colorR", 1.0)
+    cmds.setAttr(land_mat + ".colorG", 0.75)
+    cmds.setAttr(land_mat + ".colorB", 0.45)
+    land_sg = cmds.sets(renderable=True, noSurfaceShader=True, empty=True)
+    cmds.connectAttr('%s.outColor' % land_mat, '%s.surfaceShader' % land_sg)
     cmds.sets("land", e=True, forceElement=land_sg)
     cmds.rename(land_mat, 'land_material')
 
-
     wood_mat = cmds.shadingNode("lambert", asShader=True)
-    cmds.setAttr(wood_mat+".colorR", 0.18)
-    cmds.setAttr(wood_mat+".colorG", 0.13)
-    cmds.setAttr(wood_mat+".colorB", 0.13)
-    wood_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
-    cmds.connectAttr('%s.outColor' %wood_mat ,'%s.surfaceShader' %wood_sg)
+    cmds.setAttr(wood_mat + ".colorR", 0.18)
+    cmds.setAttr(wood_mat + ".colorG", 0.13)
+    cmds.setAttr(wood_mat + ".colorB", 0.13)
+    wood_sg = cmds.sets(renderable=True, noSurfaceShader=True, empty=True)
+    cmds.connectAttr('%s.outColor' % wood_mat, '%s.surfaceShader' % wood_sg)
     cmds.rename(wood_mat, 'wood_material')
 
-
     leaf_mat = cmds.shadingNode("lambert", asShader=True)
-    cmds.setAttr(leaf_mat+".colorR", 0.4)
-    cmds.setAttr(leaf_mat+".colorG", 1.0)
-    cmds.setAttr(leaf_mat+".colorB", 0.3)
-    leaf_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
-    cmds.connectAttr('%s.outColor' %leaf_mat ,'%s.surfaceShader' %leaf_sg)
+    cmds.setAttr(leaf_mat + ".colorR", 0.4)
+    cmds.setAttr(leaf_mat + ".colorG", 1.0)
+    cmds.setAttr(leaf_mat + ".colorB", 0.3)
+    leaf_sg = cmds.sets(renderable=True, noSurfaceShader=True, empty=True)
+    cmds.connectAttr('%s.outColor' % leaf_mat, '%s.surfaceShader' % leaf_sg)
     cmds.rename(leaf_mat, 'leaf_material')
 
-
     gray_mat = cmds.shadingNode("lambert", asShader=True)
-    cmds.setAttr(gray_mat+".colorR", 0,84)
-    cmds.setAttr(gray_mat+".colorG", 0,84)
-    cmds.setAttr(gray_mat+".colorB", 0,84)
-    gray_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
-    cmds.connectAttr('%s.outColor' %gray_mat ,'%s.surfaceShader' %gray_sg)
+    cmds.setAttr(gray_mat + ".colorR", 0, 84)
+    cmds.setAttr(gray_mat + ".colorG", 0, 84)
+    cmds.setAttr(gray_mat + ".colorB", 0, 84)
+    gray_sg = cmds.sets(renderable=True, noSurfaceShader=True, empty=True)
+    cmds.connectAttr('%s.outColor' % gray_mat, '%s.surfaceShader' % gray_sg)
     cmds.rename(gray_mat, 'gray_material')
 
-
-    water_mat = cmds.shadingNode("mia_material_x", asShader=True)
-    cmds.setAttr(water_mat+".diffuseR", 0.0)
-    cmds.setAttr(water_mat+".diffuseG", 0.209)
-    cmds.setAttr(water_mat+".diffuseB", 0.202)
-    cmds.setAttr(water_mat+".refl_gloss", 0.84)
-    cmds.setAttr(water_mat+".reflectivity", 0.6)
-    cmds.setAttr(water_mat+".diffuse_roughness", 0.16)
-    cmds.setAttr(water_mat+".refr_ior", 1.3)
-    cmds.setAttr(water_mat+".transparency", 0.43)
-    cmds.setAttr(water_mat+".refr_gloss", 0.76)
-    cmds.setAttr(water_mat+".refr_falloff_on", 1)
-    cmds.setAttr(water_mat+".refl_falloff_on", 1)
-    cmds.setAttr(water_mat+".refr_falloff_dist", 42)
-    cmds.setAttr(water_mat+".refl_falloff_dist", 10)
-    cmds.setAttr(water_mat+".refr_falloff_color_on", 1)
-    cmds.setAttr(water_mat+".refl_falloff_color_on", 1)
-    cmds.setAttr(water_mat+".refr_depth", 6)
-    cmds.setAttr(water_mat+".refr_falloff_colorR", 0.125)
-    cmds.setAttr(water_mat+".refr_falloff_colorG", 0.988)
-    cmds.setAttr(water_mat+".refr_falloff_colorB", 1.0)
-    cmds.setAttr(water_mat+".refl_falloff_colorR", 0.2)
-    cmds.setAttr(water_mat+".refl_falloff_colorG", 0.2)
-    cmds.setAttr(water_mat+".refl_falloff_colorB", 0.2)
-    water_sg= cmds.sets(renderable=True,noSurfaceShader=True,empty=True)
-    cmds.connectAttr('%s.message' %water_mat ,'%s.miPhotonShader' %water_sg)
-    cmds.connectAttr('%s.message' %water_mat ,'%s.miShadowShader' %water_sg)
-    cmds.connectAttr('%s.message' %water_mat ,'%s.miMaterialShader' %water_sg)
+    if cmds.pluginInfo('Mayatomr', q=True, l=True):
+        water_mat = cmds.shadingNode("mia_material_x", asShader=True)
+        cmds.setAttr(water_mat + ".diffuseR", 0.0)
+        cmds.setAttr(water_mat + ".diffuseG", 0.209)
+        cmds.setAttr(water_mat + ".diffuseB", 0.202)
+        cmds.setAttr(water_mat + ".refl_gloss", 0.84)
+        cmds.setAttr(water_mat + ".reflectivity", 0.6)
+        cmds.setAttr(water_mat + ".diffuse_roughness", 0.16)
+        cmds.setAttr(water_mat + ".refr_ior", 1.3)
+        cmds.setAttr(water_mat + ".transparency", 0.43)
+        cmds.setAttr(water_mat + ".refr_gloss", 0.76)
+        cmds.setAttr(water_mat + ".refr_falloff_on", 1)
+        cmds.setAttr(water_mat + ".refl_falloff_on", 1)
+        cmds.setAttr(water_mat + ".refr_falloff_dist", 42)
+        cmds.setAttr(water_mat + ".refl_falloff_dist", 10)
+        cmds.setAttr(water_mat + ".refr_falloff_color_on", 1)
+        cmds.setAttr(water_mat + ".refl_falloff_color_on", 1)
+        cmds.setAttr(water_mat + ".refr_depth", 6)
+        cmds.setAttr(water_mat + ".refr_falloff_colorR", 0.125)
+        cmds.setAttr(water_mat + ".refr_falloff_colorG", 0.988)
+        cmds.setAttr(water_mat + ".refr_falloff_colorB", 1.0)
+        cmds.setAttr(water_mat + ".refl_falloff_colorR", 0.2)
+        cmds.setAttr(water_mat + ".refl_falloff_colorG", 0.2)
+        cmds.setAttr(water_mat + ".refl_falloff_colorB", 0.2)
+        water_sg = cmds.sets(renderable=True, noSurfaceShader=True, empty=True)
+        cmds.connectAttr('%s.message' % water_mat, '%s.miPhotonShader' % water_sg)
+        cmds.connectAttr('%s.message' % water_mat, '%s.miShadowShader' % water_sg)
+        cmds.connectAttr('%s.message' % water_mat, '%s.miMaterialShader' % water_sg)
+    else:
+        water_mat = cmds.shadingNode("lambert", asShader=True)
+        cmds.setAttr(water_mat + ".colorR", 0, 0)
+        cmds.setAttr(water_mat + ".colorG", 0, 0)
+        cmds.setAttr(water_mat + ".colorB", 0.8)
+        water_sg = cmds.sets(renderable=True, noSurfaceShader=True, empty=True)
+        cmds.connectAttr('%s.outColor' % water_mat, '%s.surfaceShader' % water_sg)
     cmds.rename(water_mat, 'water_material')
 
-
-    for obj in cmds.ls(geometry=True, ): # Assign materials to objects
+    for obj in cmds.ls(geometry=True, ):  # Assign materials to objects
         if "dome_light" in obj:
             cmds.sets(obj, e=True, forceElement=light_dome_sg)
         if "LOCK" in obj:
@@ -1024,196 +1202,14 @@ def create_and_assign_materials():
             cmds.sets(obj, e=True, forceElement=water_sg)
 
 
-#
-#
-# Gui and interface:
-#
-#
-
-
-class DataTable:
-    """
-    Object stores the parameters of currently running instance of script. It also runs the functions
-    and makes callbacks to UI elements easier.
-    """
-
-    target_list = None
-    target_label = None
-    scores_list = []
-    next_step = 0  # the step that should be performed next (when running the script step-by-step)
-    ignore_steps = False  # if ignore_steps is false the animation is step by step
-
-    def __init__(self):
-        pass
-
-    def run(self, text, function, path=None):
-        """
-        Run the script: create the scene. It can run step-by-step and stop after every part or run every function
-        one after another. The function also measures an execution time of commands and updates the UI elements.
-
-        :param text: string - Name of the current step that will be displayed in the UI and scores table.
-        :param function: function() - Function that will be run.
-        :param path: string - Additional parameter: path that can be passed to the function as parameter:
-                              required by some functions.
-        """
-
-        self.target_label.setText(text)  # Update the label of UI
-        if path is None:  # If no path was passed as argument, then do not pass this variable to target function
-            ts = time.time()  # Start measuring time
-            function()  # Execute the function passed as an argument
-        else:
-            ts = time.time()
-            function(path)  # if path was passed then pass it to the target function
-        te = time.time()  # Record the ending time of command
-        score = [text, te - ts]  # Measure the interval
-        self.scores_list.append(score)  # append the
-
-        try:
-            self.target_list.addItem(QtGui.QListWidgetItem(str(score)))  # Add measured time to scores list in UI
-        except:
-            print("Some problem with UI occurred")
-            pass
-
-    def save(self):
-        """
-        Funcrtion saves the execution times of commands to the file.
-        """
-
-        i = 0
-        scores = []
-
-        while i < self.target_list.count():
-            scores.append(self.target_list.item(i).text())
-            i += 1
-
-        path = QtGui.QFileDialog.getExistingDirectory(None, 'Wybierz folder do zapisu pliku wyniki.txt',
-                                                      'D:/Dane/Projekty/licencjat/')
-        with open(path + '/wyniki_Maya.txt', 'w') as file_:
-            for score in scores:
-                file_.write(score + '\n')
-
-    def reset(self):
-        """
-        Function resets the file and parameters of this object to the initial state.
-        """
-
-        self.max_step = 0
-        cmds.file(newFile=1, force=1)  # Force creation of a new scene
-        pass
-
-
-class GUI(QtGui.QDialog):
-    path = "C:/"
-
-    def __init__(self):
-
-        # set maya main window as parent or it will disappear quickly:
-        main_window_ptr = omui.MQtUtil.mainWindow()
-        mayaMainWindow = wrapInstance(long(main_window_ptr), QtGui.QWidget)
-
-        super(GUI, self).__init__(mayaMainWindow)  # Initialize with mayaMainWindow as a parent
-
-        self.resize(250, 150)  # Set the size of window
-        self.center()
-        self.setWindowTitle('Skrypt - Maya')  # Set the title of window
-        self.setWindowFlags(QtCore.Qt.Tool)  # The tool window will always be kept on top of parent (maya_main_window)
-
-        # Delete UI on close to avoid winEvent error
-        # self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-
-        grid = QtGui.QGridLayout()  # Create a grid layout
-        grid_internal = QtGui.QGridLayout()
-        self.label_info = QtGui.QLabel('Uruchom skrypt wciskajac `start`')  # Create a label GUI element
-        btn_step = QtGui.QPushButton('Krok po kroku')  # Create a button
-        btn_start = QtGui.QPushButton('Wszystkie kroki')
-        self.connect(btn_start, SIGNAL("clicked()"), self.fn_no_steps)  # Connect button to function
-        self.connect(btn_step, SIGNAL("clicked()"), self.fn_step)
-        self.times_list = QtGui.QListWidget(self)  # Create a list widget
-        btn_save = QtGui.QPushButton('Zapisz wyniki')
-        btn_reset = QtGui.QPushButton('Wyczysc scene')
-
-        grid.addWidget(self.label_info, 0, 0)  # Add the widget to the layout
-
-        grid_internal.addWidget(btn_step, 0, 0)
-        grid_internal.addWidget(btn_start, 0, 1)
-
-        grid.addLayout(grid_internal, 1, 0)
-        grid.addWidget(self.times_list, 2, 0)
-        grid.addWidget(btn_save, 3, 0)
-        grid.addWidget(btn_reset, 4, 0)
-
-        self.data_table = DataTable()
-        self.data_table.target_list = self.times_list
-        self.data_table.target_label = self.label_info
-
-        self.connect(btn_reset, SIGNAL("clicked()"), self.data_table.reset)
-        self.connect(btn_save, SIGNAL("clicked()"), self.data_table.save)
-
-        self.setLayout(grid)  # Set the layout of the window
-
-    def center(self):
-        """
-        Function places window on the center of the screen. It is not neccesary for script to run.
-        """
-
-        qr = self.frameGeometry()
-        cp = QtGui.QDesktopWidget().availableGeometry().center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
-
-    def fn_step(self):
-        """
-        Run function step-by-step: make one step.
-        """
-
-        self.data_table.ignore_steps = False
-        self.fn_start()
-
-    def fn_no_steps(self):
-        """
-        Run function: make all the steps.
-        """
-
-        self.data_table.ignore_steps = True
-        self.fn_start()
-
-    def fn_start(self):
-        """
-        Function runs other functions in a right order and with right parameters.
-        """
-        while not os.path.isfile(self.path + '/land.obj'):  # checks if the folder includes necessary file.
-            # If not, then shows the QFileDialog that makes it possible to select the right one.
-
-            self.path = QtGui.QFileDialog.getExistingDirectory(self, 'Wybierz folder z dodatkowymi plikami',
-                                                               'D:/Dane/Projekty/licencjat/')
-            print self.path
-
-        functions_with_names = [["Ustawianie sceny", prepare_scene, self.path],
-                                ["Importowanie podstawowych obiektow", import_and_animate_basic_meshes, self.path],
-                                ["Tworzenie pletwy rekina i chmury", create_shark_and_cloud, None],
-                                ["Tworzenie skrzynki za pomoca Macro", create_chest, None],
-                                ["Tworzenie i animowanie drzew", create_and_animate_trees, None],
-                                ["Zmiana hierarhii obiektow, koncowa animacja", change_hierarchy_and_animate, None],
-                                ["Tworzenie i przypisywanie materialow", create_and_assign_materials, None]]
-
-        if self.data_table.ignore_steps:
-            for action_num in xrange(self.data_table.next_step, len(functions_with_names)):
-                line = functions_with_names[action_num]
-                self.data_table.run(text=line[0], function=line[1], path=line[2])
-        else:
-            action_num = self.data_table.next_step
-            self.data_table.next_step += 1
-            line = functions_with_names[action_num]
-            self.data_table.run(text=line[0], function=line[1], path=line[2])
-
-
 if __name__ == "__main__":
 
     # Development workaround for winEvent error when running
     # the script multiple times
     try:
+        # noinspection PyUnboundLocalVariable
         ui.close()
-    except:
+    except NameError:
         pass
 
     ui = GUI()
